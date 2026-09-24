@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"><title>Checkout | Star Pets</title></head>
+<body data-page="checkout"><header id="top"></header>
+<main class="two">
+<form id="f" class="panel">
+<h1 style="margin-bottom:1rem">Checkout</h1>
+<label>Full name<input name="fullname" required autocomplete="name"></label>
+<label>Phone (10 digits)<input name="phone" required inputmode="numeric" maxlength="10" autocomplete="tel-national"></label>
+<label>Delivery address<textarea name="address" rows="3" required autocomplete="street-address"></textarea></label>
+<h2>Payment</h2>
+<label class="opt"><input type="radio" name="pay" value="upi" checked> UPI</label>
+<div id="upi"><label>UPI ID<input name="upi" placeholder="name@bank" autocomplete="off"></label></div>
+<label class="opt"><input type="radio" name="pay" value="card"> Debit or credit card</label>
+<div id="card" hidden><label>Card number<input name="cn" inputmode="numeric" autocomplete="cc-number"></label>
+<div class="row"><label>Expiry (MM/YY)<input name="exp" placeholder="08/29" autocomplete="cc-exp"></label><label>CVV<input name="cvv" inputmode="numeric" maxlength="4" autocomplete="cc-csc"></label></div></div>
+<label class="opt"><input type="radio" name="pay" value="cod"> Cash on delivery</label>
+<p id="err" class="err" role="alert"></p>
+<button id="go">Pay</button>
+<p class="demo">Demo payment: no money is charged. Card details stay in your browser.</p>
+</form>
+<aside class="panel"><h2>Order total</h2><p><b id="tot"></b></p><a href="cart.html">Edit cart</a></aside>
+</main><footer id="foot"></footer><script src="js/app.js"></script></body></html>
