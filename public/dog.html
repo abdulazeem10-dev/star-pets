@@ -1,7 +1,27 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"><title>Dog food &amp; accessories | Star Pets</title></head>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"><title>Dog food &amp; accessories | Star Pets</title>
+<style>
+.shop-layout{display:flex;gap:1.5rem;align-items:flex-start}
+#filters{width:260px;flex:0 0 260px}
+#filters details{border:1px solid #e2e8e6;border-radius:12px;margin-bottom:.75rem;padding:.75rem 1rem;background:#fff}
+#filters summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+#filters summary::-webkit-details-marker{display:none}
+#filters summary::after{content:'▾';transition:transform .15s}
+#filters details[open] summary::after{transform:rotate(180deg)}
+#filters .opt{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.5rem 0;font-size:.95rem}
+#filters .opt span{color:#94a3a8;font-size:.85rem}
+#filters .price-row{display:flex;align-items:center;gap:.5rem;margin-top:.5rem}
+#filters .price-row input{width:100%;padding:.4rem .5rem;border:1px solid #dbe3e1;border-radius:8px}
+#grid-wrap{flex:1;min-width:0}
+</style>
+</head>
 <body data-page="shop" data-cat="Dog"><header id="top"></header>
 <main>
 <section class="hero"><div><h1>Meals your dog will actually finish.</h1><p>Complete meals, treats and accessories made for dogs.</p><a class="btn" href="#products">Shop dog products</a></div>
 </section>
-<section id="products"><div class="bar"><h2>Dog products</h2></div><div id="grid" class="grid" aria-live="polite"></div></section>
+<section id="products"><div class="bar"><h2>Dog products</h2></div>
+<div class="shop-layout">
+<aside id="filters"></aside>
+<div id="grid-wrap"><div id="grid" class="grid" aria-live="polite"></div></div>
+</div>
+</section>
 </main><footer id="foot"></footer><script src="js/app.js"></script></body></html>
