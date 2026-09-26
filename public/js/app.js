@@ -25,13 +25,10 @@ async function pShop() {
   const g = $('#grid'); let all = [], cat = document.body.dataset.cat || 'All';
   try { const r = await fetch('/api/products'); if (!r.ok) throw 0; all = await r.json(); }
   catch { g.innerHTML = '<p class="err">Products could not load. Refresh to try again.</p>'; return; }
-  const cats = ['All', ...new Set(all.map(p => p.category))];
   const draw = () => {
-    $('#chips').innerHTML = cats.map(c => `<button aria-pressed="${c === cat}">${esc(c)}</button>`).join('');
     const list = all.filter(p => cat === 'All' || p.category === cat);
     g.innerHTML = list.length ? list.map(p => `<article class="card"><div class="pic ${esc(p.category)}">${/^(https?:)?\//.test(p.image || '') ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : esc(p.name[0])}</div><div class="body"><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><div class="row"><b>${inr(p.price)}</b><button data-id="${p._id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>`).join('') : '<p>No products in this category yet.</p>';
   };
-  $('#chips').onclick = e => { if (e.target.tagName === 'BUTTON') { cat = e.target.textContent; draw(); } };
   g.onclick = e => {
     const id = e.target.dataset.id; if (!id) return;
     const p = all.find(x => x._id === id), c = cart.get(), i = c.find(x => x.id === id);
