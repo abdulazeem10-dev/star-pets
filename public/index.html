@@ -25,6 +25,14 @@
   footer.rich .footer-column h4{margin:0;font-size:.95rem;line-height:1;color:#1c3557}
   footer.rich .footer-column a{display:block;margin-bottom:9px;color:#2e4a70;font-size:.9rem;font-weight:600;text-decoration:none}
   footer.rich .footer-column a:hover{color:#2c8c86}
+
+  footer.rich .footer-map{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:28px;padding:26px 0;border-bottom:1px solid rgba(28,53,87,.14)}
+  footer.rich .footer-map h4{margin:0 0 8px;font-size:.95rem;color:#1c3557}
+  footer.rich .footer-map address{font-style:normal;color:#2e4a70;font-size:.9rem;line-height:1.5;margin-bottom:10px}
+  footer.rich .footer-map a.directions{display:inline-block;color:#2c8c86;font-weight:700;font-size:.88rem;text-decoration:underline}
+  footer.rich .footer-map iframe{width:100%;height:180px;border:0;border-radius:14px;display:block}
+  @media (max-width:620px){footer.rich .footer-map{grid-template-columns:1fr}}
+
   footer.rich .footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-top:18px;color:#2e4a70;font-size:.8rem}
   @media (max-width:620px){footer.rich .footer-grid{grid-template-columns:1fr}footer.rich .footer-bottom{flex-direction:column;align-items:flex-start}}
 </style>
@@ -79,6 +87,21 @@
         <a href="tel:+918976176855">89761 76855</a>
       </div>
     </div>
+
+    <div class="footer-map">
+      <div>
+        <h4>Visit us</h4>
+        <address>STAR PETS, Shop No 06, Riddhi Siddhi Prithivi, Plot No 112, Sector 20, Ulwe, Wahal, Maharashtra 410206</address>
+        <a class="directions" href="https://www.google.com/maps/search/?api=1&query=STAR+PETS+Shop+No+06+Riddhi+Siddhi+Prithivi+Plot+No+112+Sector+20+Ulwe+Wahal+Maharashtra+410206" target="_blank" rel="noopener">Get directions →</a>
+      </div>
+      <iframe
+        src="https://www.google.com/maps?q=STAR+PETS+Shop+No+06+Riddhi+Siddhi+Prithivi+Plot+No+112+Sector+20+Ulwe+Wahal+Maharashtra+410206&output=embed"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Star Pets location map">
+      </iframe>
+    </div>
+
     <div class="footer-bottom">
       <span>© 2026 Star Pets. All rights reserved.</span>
       <span>Admin login: <a href="admin.html" style="text-decoration:underline">here</a></span>
