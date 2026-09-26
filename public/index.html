@@ -26,11 +26,15 @@
   footer.rich .footer-column a{display:block;margin-bottom:9px;color:#2e4a70;font-size:.9rem;font-weight:600;text-decoration:none}
   footer.rich .footer-column a:hover{color:#2c8c86}
 
-  footer.rich .footer-map{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:28px;padding:26px 0;border-bottom:1px solid rgba(28,53,87,.14)}
-  footer.rich .footer-map h4{margin:0 0 8px;font-size:.95rem;color:#1c3557}
-  footer.rich .footer-map address{font-style:normal;color:#2e4a70;font-size:.9rem;line-height:1.5;margin-bottom:10px}
-  footer.rich .footer-map a.directions{display:inline-block;color:#2c8c86;font-weight:700;font-size:.88rem;text-decoration:underline}
-  footer.rich .footer-map iframe{width:100%;height:180px;border:0;border-radius:14px;display:block}
+  footer.rich .footer-map{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:28px;padding:30px 0;border-bottom:1px solid rgba(28,53,87,.14)}
+  footer.rich .footer-map-info{display:flex;flex-direction:column}
+  footer.rich .footer-map-title{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:1rem;color:#1c3557}
+  footer.rich .footer-map-title svg{flex-shrink:0}
+  footer.rich .footer-map address{font-style:normal;color:#2e4a70;font-size:.9rem;line-height:1.55;margin-bottom:14px;max-width:34ch}
+  footer.rich .footer-map a.directions{display:inline-flex;align-items:center;gap:6px;color:#fff;background:#2c8c86;padding:9px 16px;border-radius:999px;font-weight:700;font-size:.85rem;text-decoration:none;width:fit-content;transition:background .2s ease,transform .2s ease}
+  footer.rich .footer-map a.directions:hover{background:#1c3557;transform:translateY(-1px)}
+  footer.rich .footer-map-frame{border-radius:16px;overflow:hidden;box-shadow:0 14px 32px -22px rgba(28,53,87,.55);border:1px solid rgba(28,53,87,.12);min-height:190px}
+  footer.rich .footer-map-frame iframe{width:100%;height:100%;min-height:190px;border:0;display:block}
   @media (max-width:620px){footer.rich .footer-map{grid-template-columns:1fr}}
 
   footer.rich .footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-top:18px;color:#2e4a70;font-size:.8rem}
@@ -89,17 +93,22 @@
     </div>
 
     <div class="footer-map">
-      <div>
-        <h4>Visit us</h4>
+      <div class="footer-map-info">
+        <h4 class="footer-map-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.62 6.5 11.6 7 12.05a.75.75 0 0 0 1 0c.5-.45 7-6.43 7-12.05C19.5 5.36 16.14 2 12 2z" fill="#2c8c86"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>
+          Visit us
+        </h4>
         <address>STAR PETS, Shop No 06, Riddhi Siddhi Prithivi, Plot No 112, Sector 20, Ulwe, Wahal, Maharashtra 410206</address>
         <a class="directions" href="https://www.google.com/maps/search/?api=1&query=STAR+PETS+Shop+No+06+Riddhi+Siddhi+Prithivi+Plot+No+112+Sector+20+Ulwe+Wahal+Maharashtra+410206" target="_blank" rel="noopener">Get directions →</a>
       </div>
-      <iframe
-        src="https://www.google.com/maps?q=STAR+PETS+Shop+No+06+Riddhi+Siddhi+Prithivi+Plot+No+112+Sector+20+Ulwe+Wahal+Maharashtra+410206&output=embed"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        title="Star Pets location map">
-      </iframe>
+      <div class="footer-map-frame">
+        <iframe
+          src="https://www.google.com/maps?q=STAR+PETS+Shop+No+06+Riddhi+Siddhi+Prithivi+Plot+No+112+Sector+20+Ulwe+Wahal+Maharashtra+410206&output=embed"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Star Pets location map">
+        </iframe>
+      </div>
     </div>
 
     <div class="footer-bottom">
