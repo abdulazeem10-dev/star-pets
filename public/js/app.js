@@ -16,8 +16,8 @@ async function post(u, b) {
   return d;
 }
 
-$('#top').innerHTML = `<a class="brand" href="/"><span class="mark" role="img" aria-label="Star Pets logo"></span><span>Star <i>Pets</i></span></a><nav><a href="/#products">Shop</a><a href="dog.html">Dog</a><a href="cat.html">Cat</a><a href="about.html">About us</a><a href="cart.html">Cart <b id="cnt">0</b></a></nav>`;
-$('#foot').innerHTML = `<span>© Star Pets</span><a href="admin.html">Admin login</a>`;
+if ($('#top')) $('#top').innerHTML = `<a class="brand" href="/"><span class="mark" role="img" aria-label="Star Pets logo"></span><span>Star <i>Pets</i></span></a><nav><a href="/#products">Shop</a><a href="dog.html">Dog</a><a href="cat.html">Cat</a><a href="about.html">About us</a><a href="cart.html">Cart <b id="cnt">0</b></a></nav>`;
+if ($('#foot')) $('#foot').innerHTML = `<span>© Star Pets</span><a href="admin.html">Admin login</a>`;
 document.body.insertAdjacentHTML('beforeend', '<div id="toast" role="status"></div>');
 cart.set(cart.get());
 
