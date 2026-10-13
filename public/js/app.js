@@ -122,7 +122,7 @@ function pCheckout() {
     $('#go').disabled = true;
     const name = v('fullname');
     try {
-      const o = await post('/api/orders', { items: c.map(i => ({ id: i.id, qty: i.qty })), customer: { name, phone: v('phone'), address: v('address') }, paymentMethod: m });
+      const o = await post('/api/orders', { items: c.map(i => ({ id: i.id, qty: i.qty })), customer: { name, phone: v('phone'), address: v('address') }, automatedCallConsent: f.elements.voiceConsent.checked, marketingCallConsent: f.elements.marketingCallConsent.checked, paymentMethod: m });
       const p = await post(`/api/orders/${o.orderId}/pay`, {});   // card/UPI details are never sent to the server
       cart.set([]);
       $('main').className = ''; $('main').style.maxWidth = '640px';

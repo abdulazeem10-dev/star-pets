@@ -555,6 +555,85 @@ const app = express();
 
 app.use(express.json({ limit: '100kb' }));
 
+function safeSecretEqual(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) return false;
+    const aa = Buffer.from(a), bb = Buffer.from(b);
+    return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
+}
+
+// Ask the configured third-party voice assistant to follow up on an order.
+// Calls are skipped unless the customer opted in at checkout and Vapi is configured.
+async function startVoiceFollowUpCall(order, purpose) {
+    const { VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID } = process.env;
+    if (!order.automatedCallConsent || !order.customer?.phone || !VAPI_API_KEY || !VAPI_ASSISTANT_ID || !VAPI_PHONE_NUMBER_ID) return;
+
+    order.voiceFollowUp = { ...(order.voiceFollowUp?.toObject?.() || order.voiceFollowUp || {}), status: 'requesting', updatedAt: new Date() };
+    await order.save();
+    const phone = `+91${String(order.customer.phone).replace(/\D/g, '').slice(-10)}`;
+    try {
+        const response = await fetch('https://api.vapi.ai/call', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${VAPI_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                assistantId: VAPI_ASSISTANT_ID,
+                phoneNumberId: VAPI_PHONE_NUMBER_ID,
+                customer: { number: phone, name: order.customer.name },
+                metadata: { orderId: String(order._id), purpose },
+                assistantOverrides: { variableValues: {
+                    customerName: order.customer.name || 'there',
+                    orderId: String(order._id),
+                    followUpPurpose: purpose,
+                    cancellationReason: order.cancellationReason || 'not provided',
+                    orderItems: (order.items || []).map(item => item.name).join(', '),
+                    marketingCallConsent: String(order.marketingCallConsent === true)
+                } }
+            })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || data.error || `Vapi returned ${response.status}`);
+        order.voiceFollowUp.callId = data.id || '';
+        order.voiceFollowUp.status = 'queued';
+        order.voiceFollowUp.updatedAt = new Date();
+        await order.save();
+    } catch (err) {
+        console.error('Vapi follow-up call failed:', err.message);
+        order.voiceFollowUp.status = 'failed';
+        order.voiceFollowUp.updatedAt = new Date();
+        await order.save();
+    }
+}
+
+// Vapi should send end-of-call-report events to this URL. Configure a Bearer
+// credential in Vapi with the same value as VAPI_WEBHOOK_SECRET.
+app.post('/api/webhooks/vapi', async (req, res) => {
+  try {
+    const expected = process.env.VAPI_WEBHOOK_SECRET;
+    const supplied = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+    if (!expected || !safeSecretEqual(supplied, expected)) return res.status(401).json({ error: 'Unauthorized' });
+    const message = req.body?.message || {};
+    if (message.type !== 'end-of-call-report') return res.json({ received: true });
+    const call = message.call || {};
+    const orderId = call.metadata?.orderId || message.metadata?.orderId;
+    if (!mongoose.isValidObjectId(orderId)) return res.json({ received: true });
+    const analysis = message.analysis || call.analysis || {};
+    const structured = analysis.structuredData || {};
+    const reason = String(structured.customerReason || structured.reason || '').slice(0, 500);
+    const summary = String(analysis.summary || '').slice(0, 2000);
+    const status = String(call.status || message.status || 'completed').slice(0, 40);
+    await Order.updateOne({ _id: orderId }, { $set: {
+        'voiceFollowUp.callId': String(call.id || ''),
+        'voiceFollowUp.status': status,
+        'voiceFollowUp.reason': reason,
+        'voiceFollowUp.summary': summary,
+        'voiceFollowUp.updatedAt': new Date()
+    } });
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Vapi webhook failed:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
 // Serve frontend files from /public (admin panel lives at /admin)
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -779,6 +858,8 @@ app.post(
                 phone: customer.phone,
                 address: customer.address.trim()
             },
+            automatedCallConsent: req.body.automatedCallConsent === true,
+            marketingCallConsent: req.body.marketingCallConsent === true,
             total,
             paymentMethod,
             cancelTokenHash
@@ -893,6 +974,8 @@ app.post('/api/orders/:id/cancel', wrap(async (req, res) => {
     await Promise.all((cancelled.items || []).map(line =>
         Product.updateOne({ _id: line.product }, { $inc: { stock: line.qty } })
     ));
+    // Cancellation is already complete; a provider outage must not undo it.
+    await startVoiceFollowUpCall(cancelled, 'cancellation');
     res.json({ ok: true, status: 'cancelled' });
 }));
 
@@ -1129,14 +1212,14 @@ app.patch(
     '/api/admin/orders/:id',
     auth,
     wrap(async (req, res) => {
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
-            { status: req.body.status },
-            { new: true, runValidators: true }
-        );
+        const before = await Order.findById(req.params.id);
+        if (!before) return res.status(404).json({ error: 'Order not found' });
+        const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true, runValidators: true });
 
         if (!order) return res.status(404).json({ error: 'Order not found' });
 
+        if (before.status !== order.status && order.status === 'cancelled') await startVoiceFollowUpCall(order, 'cancellation');
+        if (before.status !== order.status && order.status === 'delivered') await startVoiceFollowUpCall(order, 'delivery-feedback');
         res.json(order);
     })
 );

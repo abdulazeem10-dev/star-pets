@@ -5,6 +5,8 @@
 <h1 style="margin-bottom:1rem">Checkout</h1>
 <label>Full name<input name="fullname" required autocomplete="name"></label>
 <label>Phone (10 digits)<input name="phone" required inputmode="numeric" maxlength="10" autocomplete="tel-national"></label>
+<label class="opt"><input type="checkbox" name="voiceConsent"> I agree Star Pets may call me using an automated voice assistant about cancellations or delivery feedback. Optional.</label>
+<label class="opt"><input type="checkbox" name="marketingCallConsent"> I also agree to occasional automated calls about Star Pets offers. Optional and separate from order updates.</label>
 <label>Delivery address<textarea name="address" rows="3" required autocomplete="street-address"></textarea></label>
 <h2>Payment</h2>
 <label class="opt"><input type="radio" name="pay" value="upi" checked> UPI</label>

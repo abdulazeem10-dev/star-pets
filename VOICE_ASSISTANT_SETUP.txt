@@ -1,17 +1,43 @@
-Star Pets order voice assistant setup
+Star Pets external phone voice assistant setup
 
-What changed
-- After checkout, all customers can optionally submit a 1-5 rating and spoken or typed feedback.
-- Customers can provide a cancellation reason and ask the assistant for one short, respectful alternative.
-- The customer can cancel directly at any time; the assistant does not block or guilt them.
-- A cancellation link token is generated per order; only its hash is saved in MongoDB.
-- Admin order list displays collected feedback and cancellation reasons.
-- Voice input uses browser speech recognition when supported; the page offers text entry as a fallback. AI replies are spoken using generated audio.
+WHAT THIS CODE DOES
+- Checkout has two optional, separate consent checkboxes: service calls about cancellation/delivery feedback, and marketing calls about offers.
+- If service-call consent is checked, the backend starts one Vapi outbound call after an order is cancelled by the customer or admin.
+- If service-call consent is checked, the backend also starts a feedback call when an admin marks an order delivered.
+- Vapi end-of-call reports are linked to the order and shown in the admin orders table.
+- The existing on-page voice interaction remains separate and does not itself make telephone calls.
+- Phone numbers entered in checkout are treated as Indian 10-digit mobile numbers and sent to Vapi in +91 E.164 format.
 
-Required Vercel environment variable
-- OPENAI_API_KEY = your OpenAI API key (keep private; do not commit it)
+VAPI ACCOUNT SETUP
+1. Create a Vapi account and create a voice assistant.
+2. In its system prompt, use a considerate customer-service tone. Disclose that it is an AI assistant. For cancellation calls, explain that the cancellation is already complete, ask why they cancelled, listen, and offer at most one relevant alternative. Never guilt, pressure, or imply the order was reactivated. If marketingCallConsent is false, do not promote offers; only say they are welcome to shop again. If true, it may mention only real offers currently configured by Star Pets. Always accept a refusal and end politely.
+3. Use these template variables in the assistant prompt: {{customerName}}, {{orderId}}, {{followUpPurpose}}, {{cancellationReason}}, {{orderItems}}, and {{marketingCallConsent}}. The prompt should handle followUpPurpose values "cancellation" and "delivery-feedback". For delivery-feedback, ask for a brief rating/comment and thank the customer.
+4. Configure Vapi post-call analysis with a structured text field named "customerReason" that captures the customer's cancellation reason (or their main delivery feedback reason). The webhook saves the reason and summary to the order; it does not copy the full transcript into your database.
+5. Configure the assistant to send its end-of-call-report event to:
+   https://YOUR-PRODUCTION-DOMAIN/api/webhooks/vapi
+   Use a Vapi Bearer Token custom credential for that server URL. The secret must exactly match VAPI_WEBHOOK_SECRET below. Do not configure an unauthenticated public webhook.
+6. For outbound calling, Vapi requires an imported phone number from a supported telephony provider; its free Vapi number is inbound-only. Confirm the carrier supports outbound calls to your customers' countries and configure the required compliance/permissions in both services.
+
+VERCEL ENVIRONMENT VARIABLES
+Add these as server-side environment variables for Production (and Preview if desired), then redeploy:
+- VAPI_API_KEY = Vapi private server API key (never put this in browser code)
+- VAPI_ASSISTANT_ID = ID of the configured assistant
+- VAPI_PHONE_NUMBER_ID = ID of the imported, outbound-capable Vapi phone number
+- VAPI_WEBHOOK_SECRET = a long, random secret, also configured as Vapi's Bearer credential for the webhook
+
+VAPI DASHBOARD CHECKLIST
+- Assistant server/webhook URL: https://YOUR-PRODUCTION-DOMAIN/api/webhooks/vapi
+- Attach the Bearer credential using VAPI_WEBHOOK_SECRET.
+- Enable the end-of-call-report event (and analysis summary if you want the summary stored).
+- Test first with your own number and an order that has the service-call consent checkbox checked.
+
+IMPORTANT
+- Customers who do not check the service-call consent box are not called. Offer consent is separate; do not make promotional pitches when marketingCallConsent is false.
+- An order cancellation is completed before the provider call is attempted. If Vapi is unavailable, the cancellation remains complete and the order records the call as failed.
+- Do not commit API keys or webhook secrets to Git. Do not paste them into chat; add them directly in Vercel and Vapi.
+- Outbound calling, automated marketing, caller ID, quiet hours, call recording, and consent rules vary by customer location and provider. Check the applicable rules before enabling calls. This code does not record the call audio itself.
+- This integration sends +91 followed by the 10-digit number currently collected by the checkout form. Change the normalization if you sell outside India.
+
+Existing browser-based voice assistant setup (optional)
+- OPENAI_API_KEY = OpenAI API key for the separate on-page feedback/cancellation helper
 - OPENAI_MODEL is optional; defaults to gpt-4.1-mini
-
-After adding the environment variable, redeploy the Vercel project. The AI feature calls OpenAI Responses and text-to-speech APIs, so API usage may incur charges according to your OpenAI account. No API key is included in this archive.
-
-Customer cancellation currently appears on the immediate order confirmation screen and is allowed while order status is "placed". Orders already packed, shipped, or otherwise advanced must be handled through customer support. The current checkout demo marks payments but does not implement refunds.
