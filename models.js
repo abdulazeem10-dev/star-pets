@@ -13,7 +13,14 @@ const Order = m.model('Order', new m.Schema({
   total: Number,
   paymentMethod: { type: String, enum: ['cod', 'upi', 'card'] },
   paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'pending' },
-  status: { type: String, enum: ['placed', 'packed', 'shipped', 'delivered', 'cancelled'], default: 'placed' }
+  status: { type: String, enum: ['placed', 'packed', 'shipped', 'delivered', 'cancelled'], default: 'placed' },
+  cancelTokenHash: { type: String, select: false },
+  cancellationReason: { type: String, default: '' },
+  feedback: {
+    rating: { type: Number, min: 1, max: 5 },
+    message: { type: String, default: '' },
+    submittedAt: Date
+  }
 }, { timestamps: true }));
 const Admin = m.model('Admin', new m.Schema({ email: { type: String, unique: true }, passwordHash: String }));
 module.exports = { Product, Order, Admin };

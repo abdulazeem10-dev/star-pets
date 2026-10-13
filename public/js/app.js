@@ -126,7 +126,100 @@ function pCheckout() {
       const p = await post(`/api/orders/${o.orderId}/pay`, {});   // card/UPI details are never sent to the server
       cart.set([]);
       $('main').className = ''; $('main').style.maxWidth = '640px';
-      $('main').innerHTML = `<div class="panel" style="margin-top:2rem"><h1>Order placed</h1><p>Thank you, ${esc(name)}. Your order <b>#${esc(String(o.orderId).slice(-6).toUpperCase())}</b> for ${inr(o.total)} is confirmed. ${p.paymentStatus === 'paid' ? 'Payment received.' : 'Pay when it arrives.'}</p><a class="btn" href="/">Keep shopping</a></div>`;
+      $('main').innerHTML = `<div class="panel" style="margin-top:2rem">
+        <h1>Order placed</h1>
+        <p>Thank you, ${esc(name)}. Your order <b>#${esc(String(o.orderId).slice(-6).toUpperCase())}</b> for ${inr(o.total)} is confirmed. ${p.paymentStatus === 'paid' ? 'Payment received.' : 'Pay when it arrives.'}</p>
+        <section style="border-top:1px solid var(--line);margin-top:1.2rem;padding-top:1rem">
+          <h2>How was your order experience?</h2><p class="sub">Your feedback is optional. You can type or speak.</p>
+          <label for="fbRating">Rating</label><select id="fbRating"><option value="">Choose a rating</option><option value="5">5 — Great</option><option value="4">4 — Good</option><option value="3">3 — Okay</option><option value="2">2 — Not good</option><option value="1">1 — Poor</option></select>
+          <label for="fbText">Feedback</label><textarea id="fbText" rows="3" maxlength="2000" placeholder="Tell us what you think"></textarea>
+          <button type="button" class="alt" id="fbMic">Speak feedback</button> <button type="button" class="btn" id="fbSend">Send feedback</button>
+          <p id="fbStatus" class="sub" role="status"></p>
+        </section>
+        <section style="border-top:1px solid var(--line);margin-top:1.2rem;padding-top:1rem">
+          <h2>Need to cancel?</h2><p class="sub">Tell us why, if you’d like. Our assistant can offer one helpful option, and you can cancel at any time.</p>
+          <label for="cancelText">Reason for cancelling (optional)</label><textarea id="cancelText" rows="2" maxlength="500" placeholder="Let us know why"></textarea>
+          <button type="button" class="alt" id="cancelMic">Speak reason</button>
+          <button type="button" class="alt" id="cancelHelp">Ask the assistant</button>
+          <p id="cancelReply" class="sub" role="status"></p>
+          <button type="button" class="btn" id="cancelOrder" style="background:transparent;color:var(--bad);border:1px solid var(--bad)">Cancel this order</button>
+          <p id="cancelStatus" class="sub" role="status"></p>
+        </section>
+        <p style="margin-top:1rem"><a class="btn" href="/">Keep shopping</a></p>
+      </div>`;
+
+      const orderInfo = { orderToken: o.cancelToken };
+      const $id = id => document.getElementById(id);
+      const speak = (text, audio) => {
+        if (audio) {
+          const playback = new Audio(`data:audio/mpeg;base64,${audio}`);
+          playback.play().catch(() => speak(text));
+          return;
+        }
+        if ('speechSynthesis' in window && text) {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+        }
+      };
+      const listenInto = (buttonId, fieldId, statusId) => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const button = $id(buttonId), status = $id(statusId);
+        button.onclick = () => {
+          if (!SpeechRecognition) { status.textContent = 'Voice input is not available in this browser. You can type instead.'; return; }
+          const recognition = new SpeechRecognition();
+          recognition.lang = navigator.language || 'en-IN';
+          recognition.onstart = () => { status.textContent = 'Listening…'; button.disabled = true; };
+          recognition.onresult = event => { $id(fieldId).value = event.results[0][0].transcript; status.textContent = 'Got it. You can edit the text before sending.'; };
+          recognition.onerror = () => { status.textContent = 'Could not hear that. Please try again or type instead.'; };
+          recognition.onend = () => { button.disabled = false; };
+          recognition.start();
+        };
+      };
+      const securePost = async (url, body) => {
+        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, ...orderInfo }) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Something went wrong.');
+        return data;
+      };
+      listenInto('fbMic', 'fbText', 'fbStatus');
+      listenInto('cancelMic', 'cancelText', 'cancelStatus');
+      $id('fbSend').onclick = async () => {
+        const status = $id('fbStatus'), button = $id('fbSend');
+        button.disabled = true; status.textContent = 'Sending feedback…';
+        try {
+          const message = $id('fbText').value.trim(), rating = $id('fbRating').value;
+          await securePost(`/api/orders/${o.orderId}/feedback`, { message, rating });
+          status.textContent = 'Thank you for your feedback.';
+          if (message) {
+            try {
+              const result = await securePost(`/api/orders/${o.orderId}/assistant`, { purpose: 'feedback', message });
+              status.textContent = result.reply; speak(result.reply, result.audio);
+            } catch { /* Feedback remains saved even if the optional AI reply is unavailable. */ }
+          }
+        } catch (error) { status.textContent = error.message; }
+        finally { button.disabled = false; }
+      };
+      $id('cancelHelp').onclick = async () => {
+        const status = $id('cancelReply'), message = $id('cancelText').value.trim();
+        if (!message) { status.textContent = 'Share a reason first, or cancel the order now.'; return; }
+        status.textContent = 'The assistant is thinking…';
+        try {
+          const result = await securePost(`/api/orders/${o.orderId}/assistant`, { purpose: 'cancel', message });
+          status.textContent = result.reply; speak(result.reply, result.audio);
+        } catch (error) { status.textContent = error.message; }
+      };
+      $id('cancelOrder').onclick = async () => {
+        const status = $id('cancelStatus'), button = $id('cancelOrder');
+        if (!confirm('Cancel this order now? You can still choose to keep it.')) return;
+        button.disabled = true; status.textContent = 'Cancelling order…';
+        try {
+          await securePost(`/api/orders/${o.orderId}/cancel`, { reason: $id('cancelText').value.trim() });
+          status.textContent = 'Your order is cancelled.';
+          $id('cancelHelp').disabled = true; $id('fbSend').disabled = true;
+          button.textContent = 'Order cancelled';
+          speak('Your order has been cancelled. Thank you for letting us know.');
+        } catch (error) { status.textContent = error.message; button.disabled = false; }
+      };
     } catch (x) { err.textContent = x.message; $('#go').disabled = false; }
   };
 }

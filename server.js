@@ -770,6 +770,8 @@ app.post(
 
         const total = done.reduce((sum, line) => sum + line.price * line.qty, 0);
 
+        const cancelToken = crypto.randomBytes(32).toString('hex');
+        const cancelTokenHash = crypto.createHash('sha256').update(cancelToken).digest('hex');
         const order = await Order.create({
             items: done,
             customer: {
@@ -778,12 +780,121 @@ app.post(
                 address: customer.address.trim()
             },
             total,
-            paymentMethod
+            paymentMethod,
+            cancelTokenHash
         });
 
-        res.status(201).json({ orderId: order._id, total });
+        // Return this secret once; only its hash is stored in MongoDB.
+        res.status(201).json({ orderId: order._id, cancelToken, total });
     })
 );
+
+// Customer order actions require the one-time secret returned at checkout.
+function orderTokenMatches(order, rawToken) {
+    if (!order?.cancelTokenHash || typeof rawToken !== 'string' || !rawToken) return false;
+    const saved = Buffer.from(order.cancelTokenHash, 'hex');
+    const supplied = crypto.createHash('sha256').update(rawToken).digest();
+    return saved.length === supplied.length && crypto.timingSafeEqual(saved, supplied);
+}
+
+async function getCustomerOrder(req, res) {
+    const order = await Order.findById(req.params.id).select('+cancelTokenHash');
+    if (!order) {
+        res.status(404).json({ error: 'Order not found' });
+        return null;
+    }
+    if (!orderTokenMatches(order, String(req.body.orderToken || ''))) {
+        res.status(403).json({ error: 'This order link is invalid. Please use the confirmation page for this order.' });
+        return null;
+    }
+    return order;
+}
+
+app.post('/api/orders/:id/feedback', wrap(async (req, res) => {
+    const order = await getCustomerOrder(req, res);
+    if (!order) return;
+    const message = String(req.body.message || '').trim().slice(0, 2000);
+    const rating = Number(req.body.rating);
+    if (!message && !(rating >= 1 && rating <= 5)) {
+        return res.status(400).json({ error: 'Add a rating or a short comment first.' });
+    }
+    order.feedback = {
+        rating: rating >= 1 && rating <= 5 ? rating : undefined,
+        message,
+        submittedAt: new Date()
+    };
+    await order.save();
+    res.json({ ok: true });
+}));
+
+app.post('/api/orders/:id/assistant', wrap(async (req, res) => {
+    const order = await getCustomerOrder(req, res);
+    if (!order) return;
+    const purpose = req.body.purpose === 'cancel' ? 'cancel' : 'feedback';
+    const message = String(req.body.message || '').trim().slice(0, 1200);
+    if (!message) return res.status(400).json({ error: 'Please say or type a little more first.' });
+    if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ error: 'The AI assistant is not configured yet. You can still submit feedback or cancel your order.' });
+    }
+
+    const instructions = purpose === 'cancel'
+        ? 'You are Star Pets customer care. Reply in one short, kind sentence to a customer considering cancelling an order. Acknowledge their stated reason and offer one practical way we may help, such as answering a question or changing an eligible order. Do not invent discounts, policies, delivery guarantees, or capabilities. Never pressure or guilt the customer. Clearly say they can still cancel now.'
+        : 'You are Star Pets customer care. Respond warmly and briefly to a customer who has shared feedback about their order. Thank them and do not invent promises or claim an action will be taken.';
+
+    const ai = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+            instructions,
+            input: message,
+            max_output_tokens: 120
+        })
+    });
+    const result = await ai.json().catch(() => ({}));
+    if (!ai.ok) {
+        console.error('OpenAI assistant request failed:', result.error?.message || ai.status);
+        return res.status(502).json({ error: 'The assistant could not reply just now. You can still continue with your order choice.' });
+    }
+    const reply = (result.output || []).flatMap(item => item.content || [])
+        .filter(item => item.type === 'output_text').map(item => item.text).join(' ').trim();
+    const finalReply = reply || 'Thanks for letting us know. You can still continue with your order choice.';
+    const speech = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'gpt-4o-mini-tts',
+            voice: 'coral',
+            input: finalReply,
+            instructions: 'Speak warmly and clearly in a concise customer-service voice.'
+        })
+    });
+    if (!speech.ok) {
+        console.error('OpenAI speech generation failed:', speech.status);
+        return res.json({ reply: finalReply });
+    }
+    const audio = Buffer.from(await speech.arrayBuffer()).toString('base64');
+    res.json({ reply: finalReply, audio });
+}));
+
+app.post('/api/orders/:id/cancel', wrap(async (req, res) => {
+    const order = await getCustomerOrder(req, res);
+    if (!order) return;
+    if (order.status !== 'placed') {
+        return res.status(409).json({ error: 'This order can no longer be cancelled here. Please contact Star Pets for help.' });
+    }
+    const reason = String(req.body.reason || '').trim().slice(0, 500);
+    const cancelled = await Order.findOneAndUpdate(
+        { _id: order._id, status: 'placed' },
+        { $set: { status: 'cancelled', cancellationReason: reason } },
+        { new: true }
+    );
+    if (!cancelled) return res.status(409).json({ error: 'This order has already changed status and can no longer be cancelled here.' });
+    await Promise.all((cancelled.items || []).map(line =>
+        Product.updateOne({ _id: line.product }, { $inc: { stock: line.qty } })
+    ));
+    res.json({ ok: true, status: 'cancelled' });
+}));
 
 // ==================================================
 // DEMO PAYMENT

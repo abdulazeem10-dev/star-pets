@@ -1,0 +1,17 @@
+Star Pets order voice assistant setup
+
+What changed
+- After checkout, all customers can optionally submit a 1-5 rating and spoken or typed feedback.
+- Customers can provide a cancellation reason and ask the assistant for one short, respectful alternative.
+- The customer can cancel directly at any time; the assistant does not block or guilt them.
+- A cancellation link token is generated per order; only its hash is saved in MongoDB.
+- Admin order list displays collected feedback and cancellation reasons.
+- Voice input uses browser speech recognition when supported; the page offers text entry as a fallback. AI replies are spoken using generated audio.
+
+Required Vercel environment variable
+- OPENAI_API_KEY = your OpenAI API key (keep private; do not commit it)
+- OPENAI_MODEL is optional; defaults to gpt-4.1-mini
+
+After adding the environment variable, redeploy the Vercel project. The AI feature calls OpenAI Responses and text-to-speech APIs, so API usage may incur charges according to your OpenAI account. No API key is included in this archive.
+
+Customer cancellation currently appears on the immediate order confirmation screen and is allowed while order status is "placed". Orders already packed, shipped, or otherwise advanced must be handled through customer support. The current checkout demo marks payments but does not implement refunds.
