@@ -43,6 +43,8 @@ async function pShop() {
   };
 
   const drawFilters = () => {
+    // The home page intentionally has no sidebar filters; still render its product cards.
+    if (!$('#filters')) return;
     $('#filters').innerHTML = `
       <details open><summary>Price</summary>
         <div class="price-row"><input type="number" id="pmin" placeholder="${priceMin}"> to <input type="number" id="pmax" placeholder="${priceMax}"></div>
@@ -76,7 +78,7 @@ async function pShop() {
       }
       return true;
     });
-    g.innerHTML = list.length ? list.map(p => `<article class="card"><div class="pic ${esc(p.category)}">${/^(https?:)?\//.test(p.image || '') ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : esc(p.name[0])}</div><div class="body"><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><div class="row"><b>${inr(p.price)}</b><button data-id="${p._id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>`).join('') : '<p>No products match these filters.</p>';
+    g.innerHTML = list.length ? list.map(p => `<article class="card"><div class="pic ${esc(p.category)}">${/^(https?:)?\//.test(p.image || '') ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : esc(p.name[0])}</div><div class="body"><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><div class="row"><b>${inr(p.price)}</b><button data-id="${p._id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>`).join('') : catList.length ? '<p>No products match these filters.</p>' : '<p class="empty-products">Products will appear here soon. Please check back shortly.</p>';
   };
 
   g.onclick = e => {
