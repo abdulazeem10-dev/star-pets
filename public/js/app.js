@@ -26,7 +26,7 @@ async function pShop() {
   try { const r = await fetch('/api/products'); if (!r.ok) throw 0; all = await r.json(); }
   catch { g.innerHTML = '<p class="err">Products could not load. Refresh to try again.</p>'; return; }
 
-  const catList = all.filter(p => cat === 'All' || p.category === cat);
+  let catList = all.filter(p => cat === 'All' || p.category === cat);
   const state = { brand: new Set(), breed: new Set(), age: new Set(), avail: new Set(), min: null, max: null };
 
   const uniq = key => [...new Set(catList.map(p => p[key]).filter(v => v !== undefined && v !== null && v !== ''))];
@@ -80,6 +80,20 @@ async function pShop() {
     });
     g.innerHTML = list.length ? list.map(p => `<article class="card"><div class="pic ${esc(p.category)}">${/^(https?:)?\//.test(p.image || '') ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : esc(p.name[0])}</div><div class="body"><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><div class="row"><b>${inr(p.price)}</b><button data-id="${p._id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>`).join('') : catList.length ? '<p>No products match these filters.</p>' : '<p class="empty-products">Products will appear here soon. Please check back shortly.</p>';
   };
+
+  if ($('#chips') && cat === 'All') {
+    $('#chips').setAttribute('aria-label', 'Filter products by pet type');
+    $('#chips').innerHTML = ['All', 'Dog', 'Cat'].map(category =>
+      `<button type="button" data-category="${category}" aria-pressed="${category === 'All'}">${category === 'All' ? 'All products' : `${category} products`}</button>`
+    ).join('');
+    $('#chips').onclick = e => {
+      const category = e.target.closest('button')?.dataset.category;
+      if (!category) return;
+      catList = all.filter(p => category === 'All' || p.category === category);
+      $('#chips').querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.category === category)));
+      draw();
+    };
+  }
 
   g.onclick = e => {
     const id = e.target.dataset.id; if (!id) return;
