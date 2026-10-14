@@ -32,4 +32,21 @@ const Order = m.model('Order', new m.Schema({
   }
 }, { timestamps: true }));
 const Admin = m.model('Admin', new m.Schema({ email: { type: String, unique: true }, passwordHash: String }));
-module.exports = { Product, Order, Admin };
+const GroomingAppointment = m.model('GroomingAppointment', new m.Schema({
+  customer: {
+    name: { type: String, required: true, trim: true, maxlength: 100 },
+    phone: { type: String, required: true, trim: true, maxlength: 30 },
+    email: { type: String, trim: true, lowercase: true, maxlength: 160, default: '' }
+  },
+  pet: {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    type: { type: String, enum: ['Dog', 'Cat', 'Other'], required: true },
+    breed: { type: String, trim: true, maxlength: 80, default: '' },
+    notes: { type: String, trim: true, maxlength: 1000, default: '' }
+  },
+  services: [{ type: String, enum: ['Bath', 'Haircut', 'Nail trimming'] }],
+  preferredDate: { type: Date, required: true },
+  preferredTime: { type: String, required: true, enum: ['Morning', 'Afternoon', 'Evening'] },
+  status: { type: String, enum: ['requested', 'confirmed', 'completed', 'cancelled'], default: 'requested' }
+}, { timestamps: true }));
+module.exports = { Product, Order, Admin, GroomingAppointment };

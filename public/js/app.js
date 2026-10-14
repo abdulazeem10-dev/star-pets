@@ -16,7 +16,7 @@ async function post(u, b) {
   return d;
 }
 
-if ($('#top')) $('#top').innerHTML = `<a class="brand" href="/"><span class="mark" role="img" aria-label="Star Pets logo"></span><span>Star <i>Pets</i></span></a><nav><a href="/#products">Shop</a><a href="dog.html">Dog</a><a href="cat.html">Cat</a><a href="about.html">About us</a><a href="cart.html">Cart <b id="cnt">0</b></a></nav>`;
+if ($('#top')) $('#top').innerHTML = `<a class="brand" href="/"><span class="mark" role="img" aria-label="Star Pets logo"></span><span>Star <i>Pets</i></span></a><nav><a href="/#products">Shop</a><a href="dog.html">Dog</a><a href="cat.html">Cat</a><a href="grooming.html">Grooming</a><a href="about.html">About us</a><a href="cart.html">Cart <b id="cnt">0</b></a></nav>`;
 if ($('#foot')) $('#foot').innerHTML = `<span>© Star Pets</span><a href="admin.html">Admin login</a>`;
 document.body.insertAdjacentHTML('beforeend', '<div id="toast" role="status"></div>');
 cart.set(cart.get());
@@ -224,4 +224,29 @@ function pCheckout() {
   };
 }
 
-({ shop: pShop, cart: pCart, checkout: pCheckout })[document.body.dataset.page]();
+function pGrooming() {
+  const form = $('#groomingForm');
+  const date = form.elements.preferredDate;
+  date.min = new Date().toLocaleDateString('en-CA');
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const status = $('#groomingStatus'), button = $('#groomingSubmit');
+    const services = [...form.querySelectorAll('[name="services"]:checked')].map(x => x.value);
+    if (!services.length) { status.textContent = 'Choose at least one service.'; return; }
+    button.disabled = true; status.textContent = 'Sending your appointment request…';
+    try {
+      await post('/api/grooming/appointments', {
+        customer: { name: form.elements.customerName.value, phone: form.elements.phone.value, email: form.elements.email.value },
+        pet: { name: form.elements.petName.value, type: form.elements.petType.value, breed: form.elements.breed.value, notes: form.elements.notes.value },
+        services,
+        preferredDate: form.elements.preferredDate.value,
+        preferredTime: form.elements.preferredTime.value
+      });
+      form.hidden = true;
+      $('#groomingThanks').hidden = false;
+      $('#groomingThanks').focus();
+    } catch (error) { status.textContent = error.message; button.disabled = false; }
+  };
+}
+
+({ shop: pShop, cart: pCart, checkout: pCheckout, grooming: pGrooming })[document.body.dataset.page]();

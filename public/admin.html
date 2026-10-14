@@ -81,6 +81,7 @@ dialog::backdrop{background:rgba(28,53,87,.5)}
     <button class="nav on" data-tab="dashboard">Dashboard</button>
     <button class="nav" data-tab="products">Products</button>
     <button class="nav" data-tab="orders">Orders</button>
+    <button class="nav" data-tab="grooming">Grooming requests</button>
     <div class="spacer"></div>
     <small id="who"></small>
     <a class="nav" href="/" style="color:#d3deec;text-decoration:none;padding:.65rem .8rem">View store</a>
@@ -99,6 +100,11 @@ dialog::backdrop{background:rgba(28,53,87,.5)}
     <div id="orders" class="hidden">
       <h2>Orders</h2>
       <div class="panel"><table><thead><tr><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+    </div>
+    <div id="grooming" class="hidden">
+      <h2>Grooming requests</h2>
+      <p style="color:var(--mute)">Requests are not confirmed appointments until you contact the customer and agree on a time and price.</p>
+      <div class="panel"><table><thead><tr><th>Requested</th><th>Customer</th><th>Pet</th><th>Services</th><th>Preferred slot</th><th>Status</th></tr></thead><tbody id="groomingRows"></tbody></table></div>
     </div>
   </main>
 </div>
@@ -165,9 +171,9 @@ $('logout').onclick = logout;
 
 /* tabs */
 function show(tab) {
-  ['dashboard','products','orders'].forEach(t => $(t).classList.toggle('hidden', t !== tab));
+  ['dashboard','products','orders','grooming'].forEach(t => $(t).classList.toggle('hidden', t !== tab));
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  ({ dashboard: loadStats, products: loadProducts, orders: loadOrders })[tab]();
+  ({ dashboard: loadStats, products: loadProducts, orders: loadOrders, grooming: loadGrooming })[tab]();
 }
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => show(b.dataset.tab));
 
@@ -237,6 +243,24 @@ $('orderRows').onchange = async e => {
   if (!e.target.dataset.order) return;
   await api('/orders/' + e.target.dataset.order, 'PATCH', { status: e.target.value });
   toast('Order updated');
+};
+
+async function loadGrooming() {
+  const rows = $('groomingRows');
+  const requests = await api('/grooming-appointments');
+  rows.innerHTML = requests.length ? requests.map(a => `
+    <tr><td>${new Date(a.createdAt).toLocaleString('en-IN')}</td>
+    <td>${esc(a.customer.name)}<br><small>${esc(a.customer.phone)}${a.customer.email ? '<br>' + esc(a.customer.email) : ''}</small></td>
+    <td>${esc(a.pet.name)} (${esc(a.pet.type)})${a.pet.breed ? '<br><small>' + esc(a.pet.breed) + '</small>' : ''}${a.pet.notes ? '<br><small>' + esc(a.pet.notes) + '</small>' : ''}</td>
+    <td>${(a.services || []).map(esc).join(', ')}</td>
+    <td>${new Date(a.preferredDate).toLocaleDateString('en-IN')}<br>${esc(a.preferredTime)}</td>
+    <td><select data-grooming="${a._id}" aria-label="Grooming appointment status">${['requested','confirmed','completed','cancelled'].map(s => `<option${s === a.status ? ' selected' : ''}>${s}</option>`).join('')}</select></td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No grooming requests yet.</td></tr>';
+}
+$('groomingRows').onchange = async e => {
+  if (!e.target.dataset.grooming) return;
+  await api('/grooming-appointments/' + e.target.dataset.grooming, 'PATCH', { status: e.target.value });
+  toast('Grooming request updated');
 };
 
 function start() {

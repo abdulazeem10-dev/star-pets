@@ -536,7 +536,7 @@ const { OAuth2Client } = require('google-auth-library');
 
 const googleClient = new OAuth2Client();
 
-const { Product, Order, Admin } = require('./models');
+const { Product, Order, Admin, GroomingAppointment } = require('./models');
 
 // Customer accounts (used by login.html). Move this into models.js if you prefer.
 const { Schema, model, models } = mongoose;
@@ -616,8 +616,12 @@ app.post('/api/webhooks/vapi', async (req, res) => {
     const orderId = call.metadata?.orderId || message.metadata?.orderId;
     if (!mongoose.isValidObjectId(orderId)) return res.json({ received: true });
     const analysis = message.analysis || call.analysis || {};
-    const structured = analysis.structuredData || {};
-    const reason = String(structured.customerReason || structured.reason || '').slice(0, 500);
+    const artifact = message.artifact || call.artifact || {};
+    const structuredOutputs = artifact.structuredOutputs || {};
+    const extractedResults = Object.values(structuredOutputs).map(output => output?.result ?? output);
+    const extracted = extractedResults.find(result => result && typeof result === 'object' && (result.customerReason || result.reason)) || {};
+    const extractedText = extractedResults.find(result => typeof result === 'string' && result.trim());
+    const reason = String(extracted.customerReason || extracted.reason || extractedText || '').slice(0, 500);
     const summary = String(analysis.summary || '').slice(0, 2000);
     const status = String(call.status || message.status || 'completed').slice(0, 40);
     await Order.updateOne({ _id: orderId }, { $set: {
@@ -716,6 +720,35 @@ const wrap = (fn) => (req, res) => {
         res.status(500).json({ error: 'Something went wrong' });
     });
 };
+
+app.post('/api/grooming/appointments', wrap(async (req, res) => {
+    const customer = req.body?.customer && typeof req.body.customer === 'object' ? req.body.customer : {};
+    const pet = req.body?.pet && typeof req.body.pet === 'object' ? req.body.pet : {};
+    const name = String(customer.name || '').trim();
+    const phone = String(customer.phone || '').trim();
+    const petName = String(pet.name || '').trim();
+    const petType = String(pet.type || '');
+    const services = Array.isArray(req.body.services) ? [...new Set(req.body.services)] : [];
+    const preferredDate = new Date(req.body.preferredDate);
+    const preferredTime = String(req.body.preferredTime || '');
+    if (!name || name.length > 100 || !phone || phone.length > 30 || !petName || petName.length > 80) {
+        return res.status(400).json({ error: 'Enter your name, phone number, and pet name.' });
+    }
+    if (!['Dog', 'Cat', 'Other'].includes(petType)) return res.status(400).json({ error: 'Choose your pet type.' });
+    if (!services.length || services.some(s => !['Bath', 'Haircut', 'Nail trimming'].includes(s))) {
+        return res.status(400).json({ error: 'Choose at least one grooming service.' });
+    }
+    if (!Number.isFinite(preferredDate.getTime()) || preferredDate < new Date(new Date().toDateString())) {
+        return res.status(400).json({ error: 'Choose today or a future preferred date.' });
+    }
+    if (!['Morning', 'Afternoon', 'Evening'].includes(preferredTime)) return res.status(400).json({ error: 'Choose a preferred time.' });
+    const appointment = await GroomingAppointment.create({
+        customer: { name, phone, email: String(customer.email || '').trim().slice(0, 160) },
+        pet: { name: petName, type: petType, breed: String(pet.breed || '').trim().slice(0, 80), notes: String(pet.notes || '').trim().slice(0, 1000) },
+        services, preferredDate, preferredTime
+    });
+    res.status(201).json({ ok: true, appointmentId: appointment._id });
+}));
 
 // ==================================================
 // AUTHENTICATION
@@ -1207,6 +1240,18 @@ app.get(
         res.json(await Order.find().sort('-createdAt').limit(200));
     })
 );
+
+app.get('/api/admin/grooming-appointments', auth, wrap(async (req, res) => {
+    res.json(await GroomingAppointment.find().sort('-createdAt').limit(200));
+}));
+
+app.patch('/api/admin/grooming-appointments/:id', auth, wrap(async (req, res) => {
+    const allowed = ['requested', 'confirmed', 'completed', 'cancelled'];
+    if (!allowed.includes(req.body.status)) return res.status(400).json({ error: 'Choose a valid appointment status.' });
+    const appointment = await GroomingAppointment.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true, runValidators: true });
+    if (!appointment) return res.status(404).json({ error: 'Grooming request not found.' });
+    res.json(appointment);
+}));
 
 app.patch(
     '/api/admin/orders/:id',

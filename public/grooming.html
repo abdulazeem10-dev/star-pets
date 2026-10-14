@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <title>Pet Grooming | Star Pets</title>
+  <style>
+    .grooming-hero{padding:3rem 0 2rem;max-width:760px}.grooming-hero .eyebrow{color:#2c8c86;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.grooming-hero h1{font-size:clamp(2.2rem,5vw,3.5rem);color:var(--navy);margin:.45rem 0}.grooming-hero p{font-size:1.1rem;color:var(--soft)}
+    .service-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0 2rem}.service-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.2rem}.service-card .icon{font-size:1.8rem}.service-card h2{font-size:1.15rem;margin:.45rem 0}.service-card p{margin:0;color:var(--soft);font-size:.92rem}
+    .booking{max-width:760px;margin:0 0 3rem}.booking h2{color:var(--navy)}.booking form{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}.booking form label{display:grid;gap:.3rem;font-weight:600;margin-bottom:.85rem}.booking form .wide{grid-column:1/-1}.booking fieldset{border:1px solid var(--line);border-radius:12px;padding:.6rem 1rem 0;margin:0 0 1rem}.booking legend{font-weight:700;padding:0 .3rem}.booking .service-option{display:flex;align-items:center;gap:.6rem;padding:.4rem 0}.booking .service-option input{width:auto}.booking .hint{color:var(--soft);font-size:.9rem}.booking #groomingThanks{border-left:4px solid var(--teal)}
+    @media(max-width:760px){.service-cards{grid-template-columns:1fr}.booking form{grid-template-columns:1fr}.booking form .wide{grid-column:auto}header{flex-wrap:wrap;gap:.5rem}nav{display:flex;flex-wrap:wrap;gap:.45rem .8rem}nav a{margin-left:0}}
+  </style>
+</head>
+<body data-page="grooming">
+  <header id="top"></header>
+  <main>
+    <section class="grooming-hero">
+      <div class="eyebrow">A little extra care</div>
+      <h1>Fresh, clean, and comfy.</h1>
+      <p>Request a grooming appointment for your pet. Choose a bath, haircut, nail trim, or a combination, and our team will contact you to confirm the appointment and price.</p>
+    </section>
+    <section class="service-cards" aria-label="Grooming services">
+      <article class="service-card"><div class="icon" aria-hidden="true">🛁</div><h2>Bath &amp; brush</h2><p>A refreshing bath and a good brush to help your pet feel their best.</p></article>
+      <article class="service-card"><div class="icon" aria-hidden="true">✂️</div><h2>Haircut</h2><p>Tell us about the trim you have in mind and we’ll discuss what suits your pet.</p></article>
+      <article class="service-card"><div class="icon" aria-hidden="true">🐾</div><h2>Nail trimming</h2><p>A careful nail trim as a standalone service or alongside a bath.</p></article>
+    </section>
+    <section class="panel booking" aria-labelledby="bookTitle">
+      <h2 id="bookTitle">Request an appointment</h2>
+      <p class="hint">This is an appointment request, not a confirmed booking. We’ll call or message to confirm availability and pricing.</p>
+      <form id="groomingForm">
+        <label>Your name<input name="customerName" autocomplete="name" required maxlength="100"></label>
+        <label>Phone number<input name="phone" type="tel" autocomplete="tel" required maxlength="30" placeholder="For appointment confirmation"></label>
+        <label>Email (optional)<input name="email" type="email" autocomplete="email" maxlength="160"></label>
+        <label>Pet’s name<input name="petName" required maxlength="80"></label>
+        <label>Pet type<select name="petType" required><option value="">Choose one</option><option>Dog</option><option>Cat</option><option>Other</option></select></label>
+        <label>Breed (optional)<input name="breed" maxlength="80"></label>
+        <fieldset class="wide"><legend>Services (choose at least one)</legend>
+          <label class="service-option"><input type="checkbox" name="services" value="Bath"> Bath &amp; brush</label>
+          <label class="service-option"><input type="checkbox" name="services" value="Haircut"> Haircut</label>
+          <label class="service-option"><input type="checkbox" name="services" value="Nail trimming"> Nail trimming</label>
+        </fieldset>
+        <label>Preferred date<input name="preferredDate" type="date" required></label>
+        <label>Preferred time<select name="preferredTime" required><option value="">Choose a time</option><option>Morning</option><option>Afternoon</option><option>Evening</option></select></label>
+        <label class="wide">Anything we should know? (optional)<textarea name="notes" rows="3" maxlength="1000" placeholder="For example, your pet’s coat or any handling needs"></textarea></label>
+        <div class="wide"><button id="groomingSubmit" type="submit">Request grooming appointment</button><p id="groomingStatus" class="err" role="status" aria-live="polite"></p></div>
+      </form>
+      <div id="groomingThanks" class="panel" tabindex="-1" role="status" hidden><h2>Request received!</h2><p>Thanks. Star Pets will contact you to confirm the groomer, appointment time, and price.</p><a class="btn" href="/">Back to shop</a></div>
+    </section>
+  </main>
+  <footer id="foot"></footer>
+  <script src="js/app.js"></script>
+  <script src="js/auth-nav.js"></script>
+</body>
+</html>
