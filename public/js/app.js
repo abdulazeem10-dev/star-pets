@@ -27,7 +27,7 @@ async function pShop() {
   catch { g.innerHTML = '<p class="err">Products could not load. Refresh to try again.</p>'; return; }
 
   let catList = all.filter(p => cat === 'All' || p.category === cat);
-  const state = { brand: new Set(), breed: new Set(), age: new Set(), flavour: new Set(), avail: new Set(), min: null, max: null };
+  const state = { brand: new Set(), breed: new Set(), age: new Set(), age_group: new Set(), flavour: new Set(), avail: new Set(), min: null, max: null };
 
   const ageLabel = a => (a <= 1 ? '1 Year Or Less' : `${a} Years`);
   const facetValue = (p, key) => {
@@ -38,6 +38,7 @@ async function pShop() {
     if (key === 'brand') return name.trim().split(/\s+/)[0] || '';
     if (key === 'breed') return ['Persian', 'Siamese', 'Maine Coon', 'Labrador', 'Golden Retriever', 'German Shepherd', 'Beagle', 'Poodle', 'Bulldog', 'Ragdoll'].find(b => name.toLowerCase().includes(b.toLowerCase())) || '';
     if (key === 'age') return /kitten|puppy/i.test(name) ? (/kitten/i.test(name) ? 'Kitten' : 'Puppy') : /senior/i.test(name) ? 'Senior' : /adult|junior/i.test(name) ? 'Adult' : '';
+    if (key === 'age_group') return /kitten/i.test(name) ? 'Kitten' : /puppy/i.test(name) ? 'Puppy' : /senior/i.test(name) ? 'Senior' : /adult|junior/i.test(name) ? 'Adult' : '';
     if (key === 'flavour') return ['chicken', 'fish', 'seafood', 'tuna', 'salmon', 'mackerel', 'beef', 'lamb', 'turkey', 'duck'].find(f => name.toLowerCase().includes(f)) || '';
     return '';
   };
@@ -58,13 +59,15 @@ async function pShop() {
     if (!$('#filters')) return;
     $('#filters').innerHTML = `
       <details open><summary>Price</summary>
-        <div class="price-row"><input type="number" id="pmin" placeholder="${priceMin}"> to <input type="number" id="pmax" placeholder="${priceMax}"></div>
+        <div class="price-row"><label class="sr-only" for="pmin">Minimum price</label><input type="number" id="pmin" min="0" aria-label="Minimum price" placeholder="₹ ${priceMin}"><span>to</span><label class="sr-only" for="pmax">Maximum price</label><input type="number" id="pmax" min="0" aria-label="Maximum price" placeholder="₹ ${priceMax}"></div>
       </details>
       ${checklist('Brand', 'brand', uniq('brand'))}
-      ${checklist('Availability', 'avail', ['in', 'out'], v => v === 'in' ? 'In Stock' : 'Out Of Stock', (_key, v) => catList.filter(p => v === 'in' ? Number(p.stock) > 0 : Number(p.stock) <= 0).length)}
+      ${checklist('Availability', 'avail', ['in', 'out'], v => v === 'in' ? 'In stock' : 'Out of stock', (_key, v) => catList.filter(p => v === 'in' ? Number(p.stock) > 0 : Number(p.stock) <= 0).length)}
       ${checklist('Breed', 'breed', uniq('breed'))}
       ${checklist('Age', 'age', uniq('age'))}
+      ${checklist('Age group', 'age_group', uniq('age_group'))}
       ${checklist('Flavour', 'flavour', uniq('flavour'))}
+      <button class="filter-reset" type="button">Clear filters</button>
     `;
     $('#pmin').oninput = e => { state.min = e.target.value === '' ? null : Number(e.target.value); draw(); };
     $('#pmax').oninput = e => { state.max = e.target.value === '' ? null : Number(e.target.value); draw(); };
@@ -84,6 +87,7 @@ async function pShop() {
       if (state.brand.size && !state.brand.has(facetValue(p, 'brand'))) return false;
       if (state.breed.size && !state.breed.has(facetValue(p, 'breed'))) return false;
       if (state.age.size && !state.age.has(facetValue(p, 'age'))) return false;
+      if (state.age_group.size && !state.age_group.has(facetValue(p, 'age_group'))) return false;
       if (state.flavour.size && !state.flavour.has(facetValue(p, 'flavour'))) return false;
       if (state.avail.size) {
         const bucket = p.stock > 0 ? 'in' : 'out';
@@ -96,6 +100,7 @@ async function pShop() {
     if (sort === 'price-high') list.sort((a, b) => Number(b.price) - Number(a.price));
     if (sort === 'name') list.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     g.innerHTML = list.length ? list.map(p => `<article class="card"><div class="pic ${esc(p.category)}">${/^(https?:)?\//.test(p.image || '') ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : esc(p.name[0])}</div><div class="body"><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><div class="row"><b>${inr(p.price)}</b><button data-id="${p._id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>`).join('') : catList.length ? '<p>No products match these filters.</p>' : '<p class="empty-products">Products will appear here soon. Please check back shortly.</p>';
+    const resultCount = $('#result-count'); if (resultCount) resultCount.textContent = `${list.length} products`;
   };
 
   if ($('#sortBy')) $('#sortBy').onchange = draw;
@@ -123,6 +128,13 @@ async function pShop() {
   };
 
   drawFilters();
+  $('#filters')?.querySelector('.filter-reset')?.addEventListener('click', () => {
+    Object.values(state).forEach(v => v instanceof Set ? v.clear() : null);
+    state.min = state.max = null;
+    const min = $('#pmin'), max = $('#pmax'); if (min) min.value = ''; if (max) max.value = '';
+    $('#filters').querySelectorAll('input[type="checkbox"]').forEach(input => input.checked = false);
+    draw();
+  });
   draw();
 }
 

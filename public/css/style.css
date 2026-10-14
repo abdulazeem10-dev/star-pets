@@ -60,3 +60,58 @@ footer a{color:inherit}
 @media(max-width:900px){.shop-layout #grid.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.shop-layout #grid.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Catalog layout inspired by the supplied marketplace reference, using Star Pets styling. */
+.shop-catalog{width:min(100%,1880px);max-width:none;padding-inline:clamp(16px,3.2vw,54px)}
+.shop-banner{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:245px;margin:24px 0 20px;padding:30px 5%;overflow:hidden;border-radius:20px;background:linear-gradient(105deg,#1c3557 0%,#245c76 54%,#3ba6a6 100%);color:white}
+.shop-banner-copy{position:relative;z-index:1;max-width:47%}
+.shop-eyebrow{display:block;margin-bottom:8px;color:#b9e5dd;font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.shop-banner h1{max-width:14ch;color:#fff;font-size:clamp(2rem,4vw,3.25rem);line-height:1.04}
+.shop-banner p{max-width:45ch;margin:12px 0 18px;color:#e4f2f2}
+.shop-banner .btn{background:#f4c84a;border-color:#f4c84a;color:#193453;border-radius:8px}
+.shop-banner .btn:hover{background:#ffdb6a}
+.shop-banner>img{width:45%;height:205px;object-fit:cover;object-position:center 43%;border-radius:15px;mix-blend-mode:screen;mask-image:linear-gradient(90deg,transparent 0%,#000 18%);}
+.category-rail{display:flex;justify-content:space-around;align-items:center;gap:12px;margin:0 0 30px;padding:15px 12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.category-rail a{display:flex;align-items:center;justify-content:center;gap:9px;min-width:110px;padding:9px 14px;border-radius:10px;color:var(--ink);font-weight:700;text-decoration:none;transition:background .15s,color .15s}
+.category-rail a:hover,.category-rail a.active{background:#e7f4f2;color:#197f7b}
+.category-rail a:first-child{font-size:1.2rem;color:#d6a72b}
+.category-rail a span{font-size:.95rem;color:var(--ink)}
+.shop-catalog #products{scroll-margin-top:90px}
+.shop-catalog .bar{margin-bottom:16px}
+.shop-catalog .bar h2{margin:0;font-size:1.55rem}
+.result-count{display:block;color:#718096;font-size:.84rem;margin-top:3px}
+.sort-control{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+.sort-control select{font-size:.9rem;text-transform:none;letter-spacing:normal;min-width:185px}
+.shop-layout{display:flex;gap:18px;align-items:flex-start}
+.shop-layout #filters{width:230px;flex:0 0 230px;position:sticky;top:84px;max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain;padding:1px 3px 12px 0;scrollbar-width:thin}
+#filters details{border:1px solid #e4e9e8;border-radius:10px;margin-bottom:9px;padding:12px 13px;background:#fff;box-shadow:0 2px 8px rgba(20,33,61,.025)}
+#filters summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:.9rem}
+#filters summary::-webkit-details-marker{display:none}
+#filters summary::after{content:'⌄';font-size:1rem;color:#627184;transition:transform .15s}
+#filters details[open] summary::after{transform:rotate(180deg)}
+#filters .opt{display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin:.55rem 0;font-size:.84rem;color:#49586b;cursor:pointer}
+#filters .opt>span:first-child{display:flex;align-items:center;gap:6px;min-width:0}
+#filters .opt input{width:15px;height:15px;margin:0;accent-color:var(--teal)}
+#filters .opt>span:last-child{color:#8d9aa4;font-size:.78rem;flex:none}
+#filters .price-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin-top:10px;color:#718096;font-size:.82rem}
+#filters .price-row input{min-width:0;width:100%;padding:7px 8px;border:1px solid #dbe3e1;border-radius:8px;font-size:.84rem}
+#filters .filter-reset{width:100%;margin-top:3px;padding:8px 12px;background:#fff;border:1px solid var(--line);color:var(--navy);font-size:.84rem;border-radius:9px}
+#filters .filter-reset:hover{background:#edf7f6}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.shop-layout #grid-wrap{flex:1;min-width:0}
+.shop-layout #grid.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.shop-catalog .card{border:1px solid #e5e9e8;border-radius:12px;box-shadow:0 2px 8px rgba(20,33,61,.025);transition:transform .18s ease,box-shadow .18s ease}
+.shop-catalog .card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(20,33,61,.09)}
+.shop-catalog .pic{height:clamp(185px,20vw,285px);aspect-ratio:auto;background:#fff;padding:14px}
+.shop-catalog .pic img{width:100%;height:100%;object-fit:contain}
+.shop-catalog .card .body{padding:12px;gap:7px}
+.shop-catalog .card h3{font-size:1rem;line-height:1.25}
+.shop-catalog .card p{font-size:.82rem;line-height:1.4;color:#718096}
+.shop-catalog .card .row{align-items:center;margin-top:5px}
+.shop-catalog .card .row b{font-size:.95rem}
+.shop-catalog .card .row button{padding:7px 10px;background:#f4c84a;border:1px solid #f4c84a;color:#193453;border-radius:7px;font-size:.8rem;white-space:nowrap}
+.shop-catalog .card .row button:hover{background:#ffdb6a}
+@media(max-width:1250px){.shop-layout #grid.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.shop-layout #grid.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.shop-layout #filters{width:210px;flex-basis:210px}}
+@media(max-width:760px){.shop-banner{min-height:0;padding:26px;gap:16px}.shop-banner-copy{max-width:60%}.shop-banner>img{width:40%;height:150px}.shop-layout{flex-direction:column}.shop-layout #filters{width:100%;flex:auto;position:static;max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.shop-layout #filters details{margin:0}.shop-layout #filters .filter-reset{grid-column:1/-1}.category-rail{justify-content:flex-start;overflow-x:auto}.category-rail a{flex:none}}
+@media(max-width:520px){.shop-banner{display:block;padding:22px}.shop-banner-copy{max-width:none}.shop-banner h1{font-size:2.05rem}.shop-banner>img{width:100%;height:130px;margin-top:18px;mask-image:linear-gradient(180deg,transparent 0%,#000 18%)}.shop-catalog .pic{height:190px}.shop-catalog .card .body{padding:10px}.shop-catalog .card h3{font-size:.9rem}.shop-catalog .card .row{align-items:flex-start;flex-direction:column}.shop-catalog .card .row button{width:100%}.shop-layout #filters{grid-template-columns:1fr}}
