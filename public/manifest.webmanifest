@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Star Pets",
+  "short_name": "Star Pets",
+  "description": "Shop pet food and essentials, or request grooming care.",
+  "lang": "en-IN",
+  "start_url": "/#/shop",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3fafa",
+  "theme_color": "#1c3557",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    { "src": "/star-pets-icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/star-pets-icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

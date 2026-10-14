@@ -1,64 +1,23 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Meet Star Pets, your local shop for pet food, everyday essentials, and grooming care in Ulwe, Maharashtra.">
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <title>About Star Pets | Pet care in Ulwe</title>
-  <style>
-    .about-main{max-width:1200px;padding-top:2.5rem}
-    .about-hero{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(2rem,6vw,5rem);padding:1.5rem 0 3.5rem}
-    .about-copy .eyebrow,.section-eyebrow{color:#2c8c86;font-size:.86rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-    .about-copy h1{color:var(--navy);font-size:clamp(2.6rem,5vw,4.2rem);margin:.7rem 0 1rem}
-    .about-copy .lead{font-size:clamp(1.1rem,2vw,1.3rem);color:var(--soft);max-width:46ch}
-    .about-actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:1.5rem}
-    .about-photo{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:26px;box-shadow:0 20px 50px -32px rgba(20,33,61,.45)}
-    .about-values{background:#fff;border:1px solid var(--line);border-radius:24px;padding:clamp(1.5rem,4vw,3rem);margin:0 0 2rem}
-    .about-values h2,.about-contact h2{color:var(--ink);font-size:clamp(1.7rem,3vw,2.3rem)}
-    .values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.5rem}
-    .value-card{padding:1.2rem;border-radius:16px;background:#f5f9f8}
-    .value-card .value-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--mist);color:#2c8c86;font-weight:700;font-size:1.15rem}
-    .value-card h3{font-size:1.15rem;margin:.8rem 0 .4rem}
-    .value-card p{margin:0;color:var(--soft)}
-    .about-contact{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;background:#1c3557;color:#fff;border-radius:22px;padding:clamp(1.5rem,4vw,2.5rem);margin-bottom:3rem}
-    .about-contact h2{color:#fff;margin-bottom:.5rem}.about-contact p{margin:0;color:#d9e5f3;max-width:55ch}
-    .about-contact .btn{background:#3ba6a6;border-color:#3ba6a6;white-space:nowrap}
-    @media(max-width:760px){.about-main{padding-top:1rem}.about-hero{grid-template-columns:1fr;padding:1.5rem 0 2rem}.about-photo{grid-row:1}.values-grid{grid-template-columns:1fr}.about-contact{align-items:flex-start;flex-direction:column}}
-  </style>
-</head>
-<body data-page="about">
-  <header id="top"></header>
-  <main class="about-main">
-    <section class="about-hero">
-      <div class="about-copy">
-        <div class="eyebrow">A little about us</div>
-        <h1>Good care for the pets who make life brighter.</h1>
-        <p class="lead">Star Pets is a local pet shop in Ulwe, built to make everyday care easier for dogs, cats, and the people who love them.</p>
-        <p>We bring together pet food, treats, and useful essentials, with friendly help from a team that cares about your pet’s wellbeing.</p>
-        <div class="about-actions"><a class="btn" href="/#products">Explore products</a><a class="btn" href="grooming.html" style="background:transparent;color:var(--navy)">Explore grooming</a></div>
-      </div>
-      <img class="about-photo" src="images/about-pets.png" alt="A pet parent sharing a quiet moment with a golden retriever and tabby cat" loading="eager">
-    </section>
-
-    <section class="about-values" aria-labelledby="valuesTitle">
-      <div class="section-eyebrow">What matters to us</div>
-      <h2 id="valuesTitle">Thoughtful care, every day.</h2>
-      <div class="values-grid">
-        <article class="value-card"><span class="value-mark" aria-hidden="true">♡</span><h3>Carefully chosen</h3><p>Food, treats, and everyday essentials selected with pets and their needs in mind.</p></article>
-        <article class="value-card"><span class="value-mark" aria-hidden="true">✦</span><h3>Here for local pet parents</h3><p>A neighborhood team ready to help with questions about products and orders.</p></article>
-        <article class="value-card"><span class="value-mark" aria-hidden="true">🐾</span><h3>More ways to care</h3><p>Shop for your pet or request a grooming appointment for a bath, haircut, or nail trim.</p></article>
-      </div>
-    </section>
-
-    <section class="about-contact" aria-labelledby="contactTitle">
-      <div><h2 id="contactTitle">We’d love to hear from you.</h2><p>Questions about a product, order, or grooming request? Get in touch with Star Pets.</p></div>
-      <a class="btn" href="tel:+918976176855">Contact Star Pets</a>
-    </section>
-  </main>
-  <footer id="foot"></footer>
-  <script src="js/app.js"></script>
-  <script src="js/auth-nav.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1c3557" />
+    <meta name="description" content="Shop thoughtfully selected pet food and essentials, or request grooming care at Star Pets." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/star-pets-icon.svg" type="image/svg+xml" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <title>Star Pets | Pet food, essentials & grooming</title>
+    <script type="module" crossorigin src="/assets/index-DsRL9u9O.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-B4cc6mO7.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

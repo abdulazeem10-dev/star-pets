@@ -1,1 +1,27 @@
-{"name":"star-pets","version":"1.0.0","main":"server.js","scripts":{"start":"node server.js","seed":"node seed.js"},"dependencies":{"bcryptjs":"^2.4.3","dotenv":"^16.6.1","express":"^4.19.2","google-auth-library":"^11.2.0","jsonwebtoken":"^9.0.2","mongoose":"^8.5.0"}}
+{
+  "name": "star-pets",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "dev:server": "node server.js",
+    "dev:client": "vite --config client/vite.config.js --host 0.0.0.0",
+    "build:client": "vite build --config client/vite.config.js && node client/scripts/deploy-build.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "google-auth-library": "^11.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router-dom": "7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.4"
+  }
+}

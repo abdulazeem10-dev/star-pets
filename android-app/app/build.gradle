@@ -1,0 +1,29 @@
+plugins {
+    id 'com.android.application'
+}
+
+def starPetsUrl = providers.gradleProperty('starPetsUrl')
+        .getOrElse('https://star-pets-4l426ymzw-abdulazeem31975-2509.vercel.app/')
+
+android {
+    namespace 'com.starpets.mobile'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.starpets.mobile'
+        minSdk 23
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+        buildConfigField 'String', 'STAR_PETS_URL', "\"${starPetsUrl}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

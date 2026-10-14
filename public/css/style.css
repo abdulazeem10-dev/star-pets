@@ -61,6 +61,28 @@ footer a{color:inherit}
 @media(max-width:480px){.shop-layout #grid.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* Keep the legacy storefront header inside narrow Android WebView screens. */
+@media(max-width:760px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  header#top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px;padding:10px 14px;min-width:0;width:100%}
+  header#top>.brand{grid-column:1;grid-row:1;min-width:0}
+  header#top .brand-logo{width:min(180px,42vw);max-width:100%;height:auto}
+  header#top nav{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;width:100%;min-width:0;justify-content:stretch;padding:4px 0 0}
+  header#top nav a{display:flex;align-items:center;justify-content:center;gap:2px;margin:0;min-width:0;padding:8px 1px;text-align:center;white-space:normal;font-size:clamp(.66rem,2.65vw,.88rem);line-height:1.15}
+  header#top .sp-auth{grid-column:2;grid-row:1;justify-content:flex-end;gap:5px;min-width:0;margin-left:0}
+  header#top .sp-auth a,header#top .sp-auth button{padding:7px 9px;font-size:.78rem;white-space:nowrap}
+  .hero,.two{grid-template-columns:minmax(0,1fr);min-width:0}
+  main,.shop-catalog{width:100%;max-width:100%;min-width:0;margin-left:auto;margin-right:auto;padding-left:14px;padding-right:14px}
+  .hero>*,.two>*{min-width:0;max-width:100%}
+  .hero img{width:100%;height:auto;max-height:280px;object-fit:cover}
+}
+@media(max-width:380px){
+  header#top{gap:8px;padding:9px 10px}
+  header#top .brand-logo{width:min(145px,38vw)}
+  header#top nav{grid-template-columns:repeat(3,minmax(0,1fr))}
+  header#top nav a{font-size:.78rem;padding:7px 2px}
+}
+
 /* Catalog layout inspired by the supplied marketplace reference, using Star Pets styling. */
 .shop-catalog{width:min(100%,1880px);max-width:none;padding-inline:clamp(16px,3.2vw,54px)}
 .shop-banner{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:245px;margin:24px 0 20px;padding:30px 5%;overflow:hidden;border-radius:20px;background:linear-gradient(105deg,#1c3557 0%,#245c76 54%,#3ba6a6 100%);color:white}
