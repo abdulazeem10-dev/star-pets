@@ -27,11 +27,22 @@ async function pShop() {
   catch { g.innerHTML = '<p class="err">Products could not load. Refresh to try again.</p>'; return; }
 
   let catList = all.filter(p => cat === 'All' || p.category === cat);
-  const state = { brand: new Set(), breed: new Set(), age: new Set(), avail: new Set(), min: null, max: null };
+  const state = { brand: new Set(), breed: new Set(), age: new Set(), flavour: new Set(), avail: new Set(), min: null, max: null };
 
-  const uniq = key => [...new Set(catList.map(p => p[key]).filter(v => v !== undefined && v !== null && v !== ''))];
-  const count = (key, val) => catList.filter(p => p[key] === val).length;
   const ageLabel = a => (a <= 1 ? '1 Year Or Less' : `${a} Years`);
+  const facetValue = (p, key) => {
+    if (p[key] !== undefined && p[key] !== null && p[key] !== '') {
+      return key === 'age' && Number.isFinite(Number(p[key])) ? ageLabel(Number(p[key])) : String(p[key]);
+    }
+    const name = String(p.name || '');
+    if (key === 'brand') return name.trim().split(/\s+/)[0] || '';
+    if (key === 'breed') return ['Persian', 'Siamese', 'Maine Coon', 'Labrador', 'Golden Retriever', 'German Shepherd', 'Beagle', 'Poodle', 'Bulldog', 'Ragdoll'].find(b => name.toLowerCase().includes(b.toLowerCase())) || '';
+    if (key === 'age') return /kitten|puppy/i.test(name) ? (/kitten/i.test(name) ? 'Kitten' : 'Puppy') : /senior/i.test(name) ? 'Senior' : /adult|junior/i.test(name) ? 'Adult' : '';
+    if (key === 'flavour') return ['chicken', 'fish', 'seafood', 'tuna', 'salmon', 'mackerel', 'beef', 'lamb', 'turkey', 'duck'].find(f => name.toLowerCase().includes(f)) || '';
+    return '';
+  };
+  const uniq = key => [...new Set(catList.map(p => facetValue(p, key)).filter(Boolean))];
+  const count = (key, val) => catList.filter(p => facetValue(p, key) === String(val)).length;
 
   const prices = catList.map(p => Number(p.price)).filter(n => !isNaN(n));
   const priceMin = prices.length ? Math.min(...prices) : 0;
@@ -52,7 +63,8 @@ async function pShop() {
       ${checklist('Brand', 'brand', uniq('brand'))}
       ${checklist('Availability', 'avail', ['in', 'out'], v => v === 'in' ? 'In Stock' : 'Out Of Stock', (_key, v) => catList.filter(p => v === 'in' ? Number(p.stock) > 0 : Number(p.stock) <= 0).length)}
       ${checklist('Breed', 'breed', uniq('breed'))}
-      ${checklist('Age', 'age', uniq('age').sort((a, b) => a - b), ageLabel)}
+      ${checklist('Age', 'age', uniq('age'))}
+      ${checklist('Flavour', 'flavour', uniq('flavour'))}
     `;
     $('#pmin').oninput = e => { state.min = e.target.value === '' ? null : Number(e.target.value); draw(); };
     $('#pmax').oninput = e => { state.max = e.target.value === '' ? null : Number(e.target.value); draw(); };
@@ -69,9 +81,10 @@ async function pShop() {
     const list = catList.filter(p => {
       if (state.min !== null && Number(p.price) < state.min) return false;
       if (state.max !== null && Number(p.price) > state.max) return false;
-      if (state.brand.size && !state.brand.has(String(p.brand))) return false;
-      if (state.breed.size && !state.breed.has(String(p.breed))) return false;
-      if (state.age.size && !state.age.has(String(p.age))) return false;
+      if (state.brand.size && !state.brand.has(facetValue(p, 'brand'))) return false;
+      if (state.breed.size && !state.breed.has(facetValue(p, 'breed'))) return false;
+      if (state.age.size && !state.age.has(facetValue(p, 'age'))) return false;
+      if (state.flavour.size && !state.flavour.has(facetValue(p, 'flavour'))) return false;
       if (state.avail.size) {
         const bucket = p.stock > 0 ? 'in' : 'out';
         if (!state.avail.has(bucket)) return false;

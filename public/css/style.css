@@ -25,6 +25,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .sort-control{display:flex;align-items:center;gap:.55rem;color:var(--soft);font-size:.92rem;white-space:nowrap}
 .sort-control select{width:auto;min-width:170px;padding:.45rem .65rem;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
 .shop-layout #filters{position:sticky;top:88px;max-height:calc(100vh - 104px);overflow-y:auto;overscroll-behavior:contain}
+.shop-catalog{max-width:1720px}
+.shop-layout #grid.grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 #chips button{background:#fff;color:var(--ink);border-color:var(--line);margin-right:.4rem;padding:.3rem .9rem;border-radius:99px}
 #chips button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.25rem}
@@ -54,4 +56,7 @@ footer a{color:inherit}
 @media(max-width:760px){.hero,.two{grid-template-columns:1fr}.hero img{order:-1}.line{grid-template-columns:1fr}}
 @media(max-width:560px){.sort-control{width:100%;justify-content:space-between}.sort-control select{flex:1;max-width:65%}}
 @media(max-width:760px){.shop-layout{flex-direction:column}.shop-layout #filters{position:static;width:100%;max-height:none;overflow:visible}.shop-layout #grid-wrap{width:100%}}
+@media(max-width:1250px){.shop-layout #grid.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.shop-layout #grid.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.shop-layout #grid.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
