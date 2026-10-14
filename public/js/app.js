@@ -37,9 +37,9 @@ async function pShop() {
   const priceMin = prices.length ? Math.min(...prices) : 0;
   const priceMax = prices.length ? Math.max(...prices) : 0;
 
-  const checklist = (title, key, opts, labelFn = v => v) => {
+  const checklist = (title, key, opts, labelFn = v => v, countFn = count) => {
     if (!opts.length) return '';
-    return `<details open><summary>${esc(title)}</summary>${opts.map(v => `<label class="opt"><span><input type="checkbox" data-facet="${key}" value="${esc(v)}"> ${esc(labelFn(v))}</span><span>${count(key, v)}</span></label>`).join('')}</details>`;
+    return `<details open><summary>${esc(title)}</summary>${opts.map(v => `<label class="opt"><span><input type="checkbox" data-facet="${key}" value="${esc(v)}"> ${esc(labelFn(v))}</span><span>${countFn(key, v)}</span></label>`).join('')}</details>`;
   };
 
   const drawFilters = () => {
@@ -50,7 +50,7 @@ async function pShop() {
         <div class="price-row"><input type="number" id="pmin" placeholder="${priceMin}"> to <input type="number" id="pmax" placeholder="${priceMax}"></div>
       </details>
       ${checklist('Brand', 'brand', uniq('brand'))}
-      ${checklist('Availability', 'stock', [1, 0], v => v ? 'In Stock' : 'Out Of Stock').replace(/data-facet="stock" value="1"/, 'data-facet="avail" value="in"').replace(/data-facet="stock" value="0"/, 'data-facet="avail" value="out"')}
+      ${checklist('Availability', 'avail', ['in', 'out'], v => v === 'in' ? 'In Stock' : 'Out Of Stock', (_key, v) => catList.filter(p => v === 'in' ? Number(p.stock) > 0 : Number(p.stock) <= 0).length)}
       ${checklist('Breed', 'breed', uniq('breed'))}
       ${checklist('Age', 'age', uniq('age').sort((a, b) => a - b), ageLabel)}
     `;
@@ -78,8 +78,14 @@ async function pShop() {
       }
       return true;
     });
+    const sort = $('#sortBy')?.value || 'featured';
+    if (sort === 'price-low') list.sort((a, b) => Number(a.price) - Number(b.price));
+    if (sort === 'price-high') list.sort((a, b) => Number(b.price) - Number(a.price));
+    if (sort === 'name') list.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     g.innerHTML = list.length ? list.map(p => `<article class="card"><div class="pic ${esc(p.category)}">${/^(https?:)?\//.test(p.image || '') ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : esc(p.name[0])}</div><div class="body"><h3>${esc(p.name)}</h3><p>${esc(p.description)}</p><div class="row"><b>${inr(p.price)}</b><button data-id="${p._id}" ${p.stock < 1 ? 'disabled' : ''}>${p.stock < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>`).join('') : catList.length ? '<p>No products match these filters.</p>' : '<p class="empty-products">Products will appear here soon. Please check back shortly.</p>';
   };
+
+  if ($('#sortBy')) $('#sortBy').onchange = draw;
 
   if ($('#chips') && cat === 'All') {
     $('#chips').setAttribute('aria-label', 'Filter products by pet type');
