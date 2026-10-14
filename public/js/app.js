@@ -236,7 +236,7 @@ function pGrooming() {
     button.disabled = true; status.textContent = 'Sending your appointment request…';
     try {
       await post('/api/grooming/appointments', {
-        customer: { name: form.elements.customerName.value, phone: form.elements.phone.value, email: form.elements.email.value },
+        customer: { name: form.elements.customerName.value, phone: form.elements.phone.value, email: form.elements.email.value, location: form.elements.location.value },
         pet: { name: form.elements.petName.value, type: form.elements.petType.value, breed: form.elements.breed.value, notes: form.elements.notes.value },
         services,
         preferredDate: form.elements.preferredDate.value,

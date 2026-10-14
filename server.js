@@ -726,14 +726,17 @@ app.post('/api/grooming/appointments', wrap(async (req, res) => {
     const pet = req.body?.pet && typeof req.body.pet === 'object' ? req.body.pet : {};
     const name = String(customer.name || '').trim();
     const phone = String(customer.phone || '').trim();
+    const email = String(customer.email || '').trim().toLowerCase();
+    const location = String(customer.location || '').trim();
     const petName = String(pet.name || '').trim();
     const petType = String(pet.type || '');
     const services = Array.isArray(req.body.services) ? [...new Set(req.body.services)] : [];
     const preferredDate = new Date(req.body.preferredDate);
     const preferredTime = String(req.body.preferredTime || '');
-    if (!name || name.length > 100 || !phone || phone.length > 30 || !petName || petName.length > 80) {
-        return res.status(400).json({ error: 'Enter your name, phone number, and pet name.' });
+    if (!name || name.length > 100 || !phone || phone.length > 30 || !petName || petName.length > 80 || !location || location.length > 500) {
+        return res.status(400).json({ error: 'Enter your name, phone number, pet name, and location.' });
     }
+    if (email.length > 160 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
     if (!['Dog', 'Cat', 'Other'].includes(petType)) return res.status(400).json({ error: 'Choose your pet type.' });
     if (!services.length || services.some(s => !['Bath', 'Haircut', 'Nail trimming'].includes(s))) {
         return res.status(400).json({ error: 'Choose at least one grooming service.' });
@@ -743,7 +746,7 @@ app.post('/api/grooming/appointments', wrap(async (req, res) => {
     }
     if (!['Morning', 'Afternoon', 'Evening'].includes(preferredTime)) return res.status(400).json({ error: 'Choose a preferred time.' });
     const appointment = await GroomingAppointment.create({
-        customer: { name, phone, email: String(customer.email || '').trim().slice(0, 160) },
+        customer: { name, phone, email, location },
         pet: { name: petName, type: petType, breed: String(pet.breed || '').trim().slice(0, 80), notes: String(pet.notes || '').trim().slice(0, 1000) },
         services, preferredDate, preferredTime
     });

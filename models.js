@@ -36,7 +36,8 @@ const GroomingAppointment = m.model('GroomingAppointment', new m.Schema({
   customer: {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     phone: { type: String, required: true, trim: true, maxlength: 30 },
-    email: { type: String, trim: true, lowercase: true, maxlength: 160, default: '' }
+    email: { type: String, required: true, trim: true, lowercase: true, maxlength: 160 },
+    location: { type: String, required: true, trim: true, maxlength: 500 }
   },
   pet: {
     name: { type: String, required: true, trim: true, maxlength: 80 },

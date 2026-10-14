@@ -250,7 +250,7 @@ async function loadGrooming() {
   const requests = await api('/grooming-appointments');
   rows.innerHTML = requests.length ? requests.map(a => `
     <tr><td>${new Date(a.createdAt).toLocaleString('en-IN')}</td>
-    <td>${esc(a.customer.name)}<br><small>${esc(a.customer.phone)}${a.customer.email ? '<br>' + esc(a.customer.email) : ''}</small></td>
+    <td>${esc(a.customer.name)}<br><small>${esc(a.customer.phone)}<br>${esc(a.customer.email)}<br>${esc(a.customer.location)}</small></td>
     <td>${esc(a.pet.name)} (${esc(a.pet.type)})${a.pet.breed ? '<br><small>' + esc(a.pet.breed) + '</small>' : ''}${a.pet.notes ? '<br><small>' + esc(a.pet.notes) + '</small>' : ''}</td>
     <td>${(a.services || []).map(esc).join(', ')}</td>
     <td>${new Date(a.preferredDate).toLocaleDateString('en-IN')}<br>${esc(a.preferredTime)}</td>
