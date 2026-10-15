@@ -20,6 +20,7 @@ The Vite server proxies `/api`, `/images`, and `/css` to Express on port 3000. M
 ## Razorpay test payments
 
 - Checkout uses Razorpay Standard Checkout. The server creates each payment order and verifies the payment signature and captured amount before marking a Star Pets order paid.
+- Checkout also offers a one-time UPI QR for the exact order total. The server creates it through Razorpay's QR Code API and marks the order paid only after confirming a captured payment for the matching amount. Razorpay must enable UPI QR Codes for your merchant account; this is an on-demand feature.
 - Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` as local environment variables in `.env` and as Vercel project environment variables. Use Test Mode keys for testing; do not put the secret in React/client files or share it in chat.
 - Cash on delivery remains available. Online payment requires both Razorpay keys; until they are configured, select cash on delivery.
 - Razorpay payment methods available to customers depend on the methods enabled for your Razorpay account. See the [Razorpay Standard Checkout integration guide](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/).

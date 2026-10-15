@@ -229,7 +229,7 @@ async function loadOrders() {
     <td>${esc(o.customer?.name)}<br><small style="color:var(--mute)">${esc(o.customer?.phone)}<br>${esc(o.customer?.address)}</small></td>
     <td>${(o.items || []).map(i => `${esc(i.name)} × ${i.qty}`).join('<br>')}</td>
     <td>${money(o.total)}</td>
-    <td>${esc(o.paymentMethod)}<br><small style="color:var(--mute)">${esc(o.paymentStatus)}</small></td>
+    <td>${esc(o.paymentMethod === 'razorpay-qr' ? 'UPI QR' : o.paymentMethod)}<br><small style="color:var(--mute)">${esc(o.paymentStatus)}</small></td>
     <td><select data-order="${o._id}" aria-label="Order status">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td></tr>`).join('')
     : '<tr><td colspan="6" class="empty">No orders yet. They will show up here once customers check out.</td></tr>';
 }
@@ -499,7 +499,7 @@ async function loadOrders() {
     <td>${esc(o.customer?.name)}<br><small style="color:var(--mute)">${esc(o.customer?.phone)}<br>${esc(o.customer?.address)}</small></td>
     <td>${(o.items || []).map(i => `${esc(i.name)} × ${i.qty}`).join('<br>')}</td>
     <td>${money(o.total)}</td>
-    <td>${esc(o.paymentMethod)}<br><small style="color:var(--mute)">${esc(o.paymentStatus)}</small></td>
+    <td>${esc(o.paymentMethod === 'razorpay-qr' ? 'UPI QR' : o.paymentMethod)}<br><small style="color:var(--mute)">${esc(o.paymentStatus)}</small></td>
     <td><select data-order="${o._id}" aria-label="Order status">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td></tr>`).join('')
     : '<tr><td colspan="6" class="empty">No orders yet. They will show up here once customers check out.</td></tr>';
 }

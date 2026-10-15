@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { HashRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 
 const StoreContext = createContext(null);
@@ -176,8 +176,30 @@ function CartPage() {
 function CheckoutPage() {
   const { cart, setCart } = useStore();
   const [paymentMethod, setPaymentMethod] = useState('razorpay'), [error, setError] = useState(''), [busy, setBusy] = useState(false), [placed, setPlaced] = useState(null);
+  const [qrPayment, setQrPayment] = useState(null), [qrStatus, setQrStatus] = useState('Waiting for your UPI payment…'), [qrChecking, setQrChecking] = useState(false);
+  const qrCheckInFlight = useRef(false);
   const [voiceConsent, setVoiceConsent] = useState(false), [marketingConsent, setMarketingConsent] = useState(false);
   const total = cart.reduce((sum, item) => sum + Number(item.price) * item.qty, 0);
+  const checkQrPayment = async (qr = qrPayment) => {
+    if (!qr || qrCheckInFlight.current) return;
+    qrCheckInFlight.current = true;
+    setQrChecking(true);
+    try {
+      const result = await api(`/api/orders/${qr.orderId}/check-qr-payment`, { orderToken: qr.cancelToken });
+      if (result.paymentStatus === 'paid') {
+        setCart([]);
+        setPlaced({ ...qr, paymentStatus: 'paid', paymentMethod: 'razorpay-qr' });
+        setQrPayment(null);
+      } else setQrStatus('Payment not received yet. This page will check again automatically.');
+    } catch (checkError) { setQrStatus(checkError.message); }
+    finally { qrCheckInFlight.current = false; setQrChecking(false); }
+  };
+  useEffect(() => {
+    if (!qrPayment) return undefined;
+    const timer = window.setInterval(() => checkQrPayment(qrPayment), 5000);
+    checkQrPayment(qrPayment);
+    return () => window.clearInterval(timer);
+  }, [qrPayment]);
   const submit = async event => {
     event.preventDefault(); setError('');
     if (!cart.length) return setError('Your cart is empty.');
@@ -189,6 +211,12 @@ function CheckoutPage() {
       const order = await api('/api/orders', { items: cart.map(item => ({ id: item.id, qty: item.qty })), customer: { name: value('fullname'), phone, address: value('address') }, automatedCallConsent: voiceConsent, marketingCallConsent: marketingConsent, paymentMethod });
       if (paymentMethod === 'cod') {
         setCart([]); setPlaced({ ...order, paymentStatus: 'pending', customerName: value('fullname'), paymentMethod });
+        return;
+      }
+      if (paymentMethod === 'razorpay-qr') {
+        if (!order.razorpay?.imageUrl || !order.razorpay?.qrCodeId) throw new Error('The payment QR could not be created. Please try again or use online checkout.');
+        setQrStatus('Waiting for your UPI payment…');
+        setQrPayment({ ...order, ...order.razorpay, customerName: value('fullname') });
         return;
       }
       if (!order.razorpay?.keyId || !order.razorpay?.orderId) throw new Error('The online payment session could not be created. Please try again or choose cash on delivery.');
@@ -221,6 +249,7 @@ function CheckoutPage() {
     finally { setBusy(false); }
   };
   if (placed) return <OrderConfirmation order={placed} />;
+  if (qrPayment) return <main className="page-main qr-payment-page"><section className="panel qr-payment-card"><h1>Scan to pay</h1><p>Use any UPI app to scan this QR and pay the exact order amount.</p><strong className="qr-total">{money(qrPayment.total)}</strong><img className="payment-qr" src={qrPayment.imageUrl} alt="Razorpay payment QR code" /><p className="qr-status" role="status" aria-live="polite">{qrStatus}</p><p className="demo">Keep this page open while we confirm your payment. If you are viewing this on your phone, scan the QR from another device.</p><button type="button" onClick={() => checkQrPayment()} disabled={qrChecking}>{qrChecking ? 'Checking payment…' : 'I’ve paid — check now'}</button><p className="demo">This one-time QR expires in about 30 minutes. Your order is confirmed only after Razorpay verifies the captured payment.</p></section></main>;
   if (!cart.length) return <main className="page-main"><section className="panel"><h1>Checkout</h1><p>Your cart is empty.</p><Link className="btn" to="/shop">Browse products</Link></section></main>;
   return <main className="page-main checkout-page"><form className="panel checkout-form" onSubmit={submit}>
     <h1>Checkout</h1>
@@ -231,8 +260,9 @@ function CheckoutPage() {
     <label>Delivery address<textarea name="address" rows="3" required autoComplete="street-address" maxLength="500" /></label>
     <h2>Payment</h2>
     <label className="consent-option"><input type="radio" name="pay" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} /> Pay online with UPI, cards, or net banking</label>
+    <label className="consent-option"><input type="radio" name="pay" value="razorpay-qr" checked={paymentMethod === 'razorpay-qr'} onChange={() => setPaymentMethod('razorpay-qr')} /> Pay by UPI QR code</label>
     <label className="consent-option"><input type="radio" name="pay" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} /> Cash on delivery</label>
-    <p className="err" role="alert">{error}</p><button disabled={busy}>{busy ? 'Please wait…' : paymentMethod === 'cod' ? 'Place order' : `Pay ${money(total)}`}</button>
+    <p className="err" role="alert">{error}</p><button disabled={busy}>{busy ? 'Please wait…' : paymentMethod === 'cod' ? 'Place order' : paymentMethod === 'razorpay-qr' ? `Generate QR for ${money(total)}` : `Pay ${money(total)}`}</button>
     <p className="demo">Online payments open in Razorpay’s secure checkout. Star Pets never receives your card details.</p>
   </form><aside className="panel order-summary"><h2>Order total</h2>{cart.map(item => <p className="row" key={item.id}><span>{item.name} × {item.qty}</span><b>{money(item.price * item.qty)}</b></p>)}<hr /><p className="row"><b>Total</b><b>{money(total)}</b></p><Link to="/cart">Edit cart</Link></aside></main>;
 }

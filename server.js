@@ -843,10 +843,10 @@ app.post(
             return bad('Enter your name, a 10-digit phone number and your address');
         }
 
-        if (!['cod', 'razorpay'].includes(paymentMethod)) {
+        if (!['cod', 'razorpay', 'razorpay-qr'].includes(paymentMethod)) {
             return bad('Choose a payment method');
         }
-        if (paymentMethod === 'razorpay' && (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET)) {
+        if (paymentMethod !== 'cod' && (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET)) {
             return res.status(503).json({ error: 'Online payment is not configured yet. Choose cash on delivery or contact Star Pets.' });
         }
 
@@ -943,6 +943,37 @@ app.post(
                 console.error('Razorpay order creation failed:', error.message);
                 return res.status(502).json({ error: 'Online payment could not start. Please try again or choose cash on delivery.' });
             }
+        } else if (paymentMethod === 'razorpay-qr') {
+            try {
+                const closeBy = Math.floor(Date.now() / 1000) + 30 * 60;
+                const qrResponse = await fetch('https://api.razorpay.com/v1/payments/qr_codes', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Basic ${Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'upi_qr',
+                        name: 'Star Pets checkout',
+                        usage: 'single_use',
+                        fixed_amount: true,
+                        payment_amount: Math.round(total * 100),
+                        description: `Star Pets order ${String(order._id).slice(-8)}`,
+                        close_by: closeBy,
+                        notes: { starPetsOrderId: String(order._id) }
+                    })
+                });
+                const qr = await qrResponse.json().catch(() => ({}));
+                if (!qrResponse.ok || !qr.id || !qr.image_url) throw new Error(qr.error?.description || 'QR creation failed');
+                order.razorpayQrCodeId = qr.id;
+                await order.save();
+                razorpay = { qrCodeId: qr.id, imageUrl: qr.image_url, closeBy: qr.close_by || closeBy };
+            } catch (error) {
+                await Order.deleteOne({ _id: order._id });
+                await rollback();
+                console.error('Razorpay QR creation failed:', error.message);
+                return res.status(502).json({ error: 'Payment QR could not be generated. Check that UPI QR Codes are enabled in Razorpay, then try again.' });
+            }
         }
 
         // Return this secret once; only its hash is stored in MongoDB.
@@ -970,6 +1001,29 @@ async function getCustomerOrder(req, res) {
     }
     return order;
 }
+
+app.post('/api/orders/:id/check-qr-payment', wrap(async (req, res) => {
+    const order = await getCustomerOrder(req, res);
+    if (!order) return;
+    if (order.paymentMethod !== 'razorpay-qr' || !order.razorpayQrCodeId) {
+        return res.status(400).json({ error: 'This order does not have a payment QR.' });
+    }
+    if (order.paymentStatus === 'paid') return res.json({ orderId: order._id, paymentStatus: 'paid' });
+
+    const response = await fetch(`https://api.razorpay.com/v1/payments/qr_codes/${encodeURIComponent(order.razorpayQrCodeId)}/payments?count=100`, {
+        headers: { Authorization: `Basic ${Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64')}` }
+    });
+    const collection = await response.json().catch(() => ({}));
+    if (!response.ok) return res.status(502).json({ error: 'Payment status could not be checked. Please try again shortly.' });
+
+    const expectedAmount = Math.round(order.total * 100);
+    const payment = (collection.items || []).find(item => item.status === 'captured' && item.captured === true && item.amount === expectedAmount && item.currency === 'INR');
+    if (!payment) return res.json({ orderId: order._id, paymentStatus: 'pending' });
+    order.paymentStatus = 'paid';
+    order.razorpayPaymentId = payment.id;
+    await order.save();
+    res.json({ orderId: order._id, paymentStatus: 'paid' });
+}));
 
 app.post('/api/orders/:id/verify-payment', wrap(async (req, res) => {
     const order = await getCustomerOrder(req, res);
