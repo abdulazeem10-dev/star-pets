@@ -27,7 +27,7 @@ The Vite server proxies `/api`, `/images`, and `/css` to Express on port 3000. M
 ## Product discounts and branding
 
 - In the admin panel, add or edit a product and set its regular price and discount percentage (0–100). The storefront shows the discounted price and sale badge; the API calculates the same discounted price for checkout orders.
-- The provided Star Pets logo is served from `public/images/star-pets-logo.png` and used in the storefront, admin panel, and site icon.
+- The provided transparent Star Pets logo is served from `public/images/star-pets-logo-transparent.png` and used in the storefront, admin panel, and site icon.
 
 ## Build and serve the website
 

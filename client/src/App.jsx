@@ -63,7 +63,7 @@ function Header() {
   const signOut = () => { localStorage.removeItem('sp_user_token'); localStorage.removeItem('sp_user'); setUser(null); };
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
   return <header className="site-header">
-    <Link className="brand" to="/"><img className="brand-logo" src="/images/star-pets-logo.png" alt="Star Pets" /></Link>
+    <Link className="brand" to="/"><img className="brand-logo" src="/images/star-pets-logo-transparent.png" alt="Star Pets" /></Link>
     <nav aria-label="Main navigation">
       <Link to="/shop">Shop</Link><Link to="/dog">Dog</Link><Link to="/cat">Cat</Link><Link to="/grooming">Grooming</Link><Link to="/about">About us</Link><Link to="/cart">Cart <b>{count}</b></Link>
     </nav>
@@ -74,7 +74,7 @@ function Header() {
 function Footer() {
   return <footer className="rich site-footer">
     <div className="footer-grid">
-      <div className="footer-brand"><Link to="/"><img src="/images/star-pets-logo.png" alt="Star Pets" /></Link><p>Nutrition, treats, and everyday essentials for the pets who make your home happier.</p></div>
+      <div className="footer-brand"><Link to="/"><img src="/images/star-pets-logo-transparent.png" alt="Star Pets" /></Link><p>Nutrition, treats, and everyday essentials for the pets who make your home happier.</p></div>
       <div className="footer-column"><h3>Shop</h3><Link to="/dog">Dog food</Link><Link to="/cat">Cat food</Link><Link to="/grooming">Grooming</Link><Link to="/shop">All products</Link></div>
       <div className="footer-column"><h3>Customer care</h3><Link to="/login">Log in / Sign up</Link><Link to="/cart">Shopping cart</Link><Link to="/about">About Star Pets</Link><a href="tel:+918976176855">Contact us</a></div>
     </div>
@@ -200,7 +200,7 @@ function CheckoutPage() {
           currency: order.razorpay.currency,
           name: 'Star Pets',
           description: `Order #${String(order.orderId).slice(-6).toUpperCase()}`,
-          image: `${window.location.origin}/images/star-pets-logo.png`,
+          image: `${window.location.origin}/images/star-pets-logo-transparent.png`,
           order_id: order.razorpay.orderId,
           prefill: { name: value('fullname'), contact: `+91${phone}` },
           theme: { color: '#2c8c86' },
