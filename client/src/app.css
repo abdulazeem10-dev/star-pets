@@ -28,3 +28,10 @@
   .site-header nav{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:0}
   .site-header nav a{font-size:.78rem;padding:7px 2px}
 }
+
+/* Keep product photos in a dedicated block above card copy on every viewport. */
+.shop-catalog #grid .card{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.shop-catalog #grid .pic{position:relative;display:grid;flex:0 0 clamp(160px,20vw,285px);width:100%;height:clamp(160px,20vw,285px);min-height:160px;margin:0;overflow:hidden}
+.shop-catalog #grid .pic img{position:static!important;display:block;width:100%;height:100%;min-height:0;object-fit:contain}
+.shop-catalog #grid .body{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;margin:0;background:#fff}
+.shop-catalog #grid .body h3,.shop-catalog #grid .body p{position:static;margin:0}
