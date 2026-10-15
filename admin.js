@@ -15,8 +15,9 @@ const Admin = models.Admin || model('Admin', new Schema({
 
 const Product = models.Product || model('Product', new Schema({
   name: { type: String, required: true, trim: true },
-  category: { type: String, enum: ['Food', 'Accessories'], default: 'Food' },
+  category: { type: String, enum: ['Dog', 'Cat', 'Accessories'], default: 'Dog' },
   price: { type: Number, required: true, min: 0 },
+  discountPercent: { type: Number, default: 0, min: 0, max: 100 },
   stock: { type: Number, default: 0, min: 0 },
   image: String,
   description: String,
@@ -30,7 +31,7 @@ const Order = models.Order || model('Order', new Schema({
   status: { type: String, enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
 }, { timestamps: true }));
 
-const PRODUCT_FIELDS = ['name', 'category', 'price', 'stock', 'image', 'description', 'active'];
+const PRODUCT_FIELDS = ['name', 'category', 'price', 'discountPercent', 'stock', 'image', 'description', 'active'];
 const pick = (obj, keys) => Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));
 const wrap = fn => (req, res) => fn(req, res).catch(err => {
   console.error(err);

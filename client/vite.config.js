@@ -7,7 +7,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: rootDir,
-  publicDir: path.resolve(rootDir, 'public'),
+  publicDir: false,
   plugins: [react()],
   server: {
     port: 5173,

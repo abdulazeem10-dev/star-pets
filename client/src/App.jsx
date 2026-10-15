@@ -4,6 +4,7 @@ import { HashRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } f
 const StoreContext = createContext(null);
 const useStore = () => useContext(StoreContext);
 const money = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value || 0));
+const productPrice = product => Math.round(Number(product?.price || 0) * (100 - Number(product?.discountPercent || 0)) / 100);
 const api = async (url, body, headers = {}) => {
   const response = await fetch(url, body === undefined ? { headers } : {
     method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body)
@@ -12,6 +13,22 @@ const api = async (url, body, headers = {}) => {
   if (!response.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
   return data;
 };
+const loadRazorpayCheckout = () => new Promise((resolve, reject) => {
+  if (window.Razorpay) return resolve();
+  const existing = document.querySelector('script[data-razorpay-checkout]');
+  if (existing) {
+    existing.addEventListener('load', () => resolve(), { once: true });
+    existing.addEventListener('error', () => reject(new Error('Could not load the secure payment window. Please try again.')), { once: true });
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  script.async = true;
+  script.dataset.razorpayCheckout = 'true';
+  script.onload = () => resolve();
+  script.onerror = () => reject(new Error('Could not load the secure payment window. Please try again.'));
+  document.body.appendChild(script);
+});
 const readCart = () => { try { return JSON.parse(localStorage.getItem('sp_cart') || '[]'); } catch { return []; } };
 const productImage = value => {
   const image = String(value || '');
@@ -46,7 +63,7 @@ function Header() {
   const signOut = () => { localStorage.removeItem('sp_user_token'); localStorage.removeItem('sp_user'); setUser(null); };
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
   return <header className="site-header">
-    <Link className="brand" to="/"><img className="brand-logo" src="/images/star-pets-logo.jpg" alt="Star Pets" /></Link>
+    <Link className="brand" to="/"><img className="brand-logo" src="/images/star-pets-logo.png" alt="Star Pets" /></Link>
     <nav aria-label="Main navigation">
       <Link to="/shop">Shop</Link><Link to="/dog">Dog</Link><Link to="/cat">Cat</Link><Link to="/grooming">Grooming</Link><Link to="/about">About us</Link><Link to="/cart">Cart <b>{count}</b></Link>
     </nav>
@@ -57,7 +74,7 @@ function Header() {
 function Footer() {
   return <footer className="rich site-footer">
     <div className="footer-grid">
-      <div className="footer-brand"><Link to="/"><img src="/images/star-pets-logo.jpg" alt="Star Pets" /></Link><p>Nutrition, treats, and everyday essentials for the pets who make your home happier.</p></div>
+      <div className="footer-brand"><Link to="/"><img src="/images/star-pets-logo.png" alt="Star Pets" /></Link><p>Nutrition, treats, and everyday essentials for the pets who make your home happier.</p></div>
       <div className="footer-column"><h3>Shop</h3><Link to="/dog">Dog food</Link><Link to="/cat">Cat food</Link><Link to="/grooming">Grooming</Link><Link to="/shop">All products</Link></div>
       <div className="footer-column"><h3>Customer care</h3><Link to="/login">Log in / Sign up</Link><Link to="/cart">Shopping cart</Link><Link to="/about">About Star Pets</Link><a href="tel:+918976176855">Contact us</a></div>
     </div>
@@ -97,15 +114,15 @@ function ShopPage({ category = 'All' }) {
   const counts = (key, value) => source.filter(product => key === 'availability' ? (value === 'In stock' ? Number(product.stock) > 0 : Number(product.stock) <= 0) : facet(product, key) === value).length;
   const filtered = useMemo(() => {
     let list = source.filter(product => {
-      const price = Number(product.price);
+      const price = productPrice(product);
       if (minimum !== '' && price < Number(minimum)) return false;
       if (maximum !== '' && price > Number(maximum)) return false;
       for (const key of ['type', 'brand', 'breed', 'age', 'flavour']) if (selected[key].size && !selected[key].has(facet(product, key))) return false;
       if (selected.availability.size && !selected.availability.has(Number(product.stock) > 0 ? 'In stock' : 'Out of stock')) return false;
       return true;
     });
-    if (sort === 'price-low') list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === 'price-high') list = [...list].sort((a, b) => b.price - a.price);
+    if (sort === 'price-low') list = [...list].sort((a, b) => productPrice(a) - productPrice(b));
+    if (sort === 'price-high') list = [...list].sort((a, b) => productPrice(b) - productPrice(a));
     if (sort === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [source, selected, minimum, maximum, sort]);
@@ -118,7 +135,7 @@ function ShopPage({ category = 'All' }) {
   const title = category === 'All' ? 'Our products' : `${category} products`;
   const introTitle = category === 'Cat' ? 'Good food. Happier cats.' : category === 'Dog' ? 'Good food. Happier dogs.' : 'Good things for the pets who wait by the door.';
   return <main className="shop-catalog">
-    {category === 'All' ? <section className="hero home-hero"><div><span className="shop-eyebrow">Care for your best friend</span><h1>Good food for the ones who wait by the door.</h1><p>Thoughtfully selected food, treats, and everyday essentials for dogs and cats.</p><a className="btn" href="#products">Shop products</a></div><img src="/images/hero-pets.jpg" alt="A golden retriever and tabby cat relaxing together beside their food bowls" fetchPriority="high" /></section> : <section className="shop-banner"><div className="shop-banner-copy"><span className="shop-eyebrow">Thoughtful picks for {category.toLowerCase()}</span><h1>{introTitle}</h1><p>Browse nourishing meals, tasty treats, and everyday essentials for your {category === 'Cat' ? 'feline' : 'canine'} friend.</p><a className="btn" href="#products">Shop {category.toLowerCase()} products</a></div><img src="/images/hero-pets.jpg" alt="A pet parent with a cat and dog" fetchPriority="high" /></section>}
+    {category === 'All' ? <section className="hero home-hero"><div><span className="shop-eyebrow">Care for your best friend</span><h1>Good food for the ones who wait by the door.</h1><p>Thoughtfully selected food, treats, and everyday essentials for dogs and cats.</p><a className="btn" href="#products">Shop products</a></div><img src="/images/hero-pets.png" alt="A golden retriever and tabby cat relaxing together beside their food bowls" fetchPriority="high" /></section> : <section className="shop-banner"><div className="shop-banner-copy"><span className="shop-eyebrow">Thoughtful picks for {category.toLowerCase()}</span><h1>{introTitle}</h1><p>Browse nourishing meals, tasty treats, and everyday essentials for your {category === 'Cat' ? 'feline' : 'canine'} friend.</p><a className="btn" href="#products">Shop {category.toLowerCase()} products</a></div><img src="/images/hero-pets.png" alt="A pet parent with a cat and dog" fetchPriority="high" /></section>}
     <CategoryRail active={category === 'All' ? 'All pets' : category} />
     <section id="products"><div className="bar"><div><h2>{title}</h2><span className="result-count" aria-live="polite">{loading ? 'Loading products…' : `${filtered.length} products`}</span></div><label className="sort-control" htmlFor="sortBy">Sort by<select id="sortBy" value={sort} onChange={event => setSort(event.target.value)}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="name">Name</option></select></label></div>
       <div className="shop-layout"><aside id="filters" aria-label="Product filters">
@@ -130,7 +147,7 @@ function ShopPage({ category = 'All' }) {
         {options('age').length > 0 && <FilterGroup title="Age group"><FilterOptions values={options('age')} facet="age" selected={selected.age} count={counts} onChange={changeFacet} /></FilterGroup>}
         {options('flavour').length > 0 && <FilterGroup title="Flavour"><FilterOptions values={options('flavour')} facet="flavour" selected={selected.flavour} count={counts} onChange={changeFacet} /></FilterGroup>}
         <button type="button" className="filter-reset" onClick={clearFilters}>Clear filters</button>
-      </aside><div id="grid-wrap"><div id="grid" className="grid" aria-live="polite">{loading ? <p>Loading products…</p> : error ? <p className="err">{error}</p> : filtered.length ? filtered.map(product => <article className="card" key={product._id}><div className={`pic ${product.category}`}>{productImage(product.image) ? <img src={productImage(product.image)} alt={product.name} loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} /> : <span aria-hidden="true">{product.category === 'Cat' ? '🐱' : '🐾'}</span>}</div><div className="body"><h3>{product.name}</h3><p>{product.description}</p><div className="row"><b>{money(product.price)}</b><button disabled={Number(product.stock) < 1} onClick={() => { addToCart(product); toast('Added to cart'); }}>{Number(product.stock) < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>) : <p>{source.length ? 'No products match these filters.' : 'Products will appear here soon. Please check back shortly.'}</p>}</div></div></div>
+      </aside><div id="grid-wrap"><div id="grid" className="grid" aria-live="polite">{loading ? <p>Loading products…</p> : error ? <p className="err">{error}</p> : filtered.length ? filtered.map(product => { const discount = Number(product.discountPercent || 0); const price = productPrice(product); return <article className="card" key={product._id}><div className={`pic ${product.category}`}>{discount > 0 && <span className="discount-badge">{discount}% off</span>}{productImage(product.image) ? <img src={productImage(product.image)} alt={product.name} loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} /> : <span aria-hidden="true">{product.category === 'Cat' ? '🐱' : '🐾'}</span>}</div><div className="body"><h3>{product.name}</h3><p>{product.description}</p><div className="row"><div className="product-prices"><b>{money(price)}</b>{discount > 0 && <s>{money(product.price)}</s>}</div><button disabled={Number(product.stock) < 1} onClick={() => { addToCart(product); toast('Added to cart'); }}>{Number(product.stock) < 1 ? 'Sold out' : 'Add to cart'}</button></div></div></article>; }) : <p>{source.length ? 'No products match these filters.' : 'Products will appear here soon. Please check back shortly.'}</p>}</div></div></div>
     </section>
     {category === 'All' && <AboutHighlights />}
   </main>;
@@ -142,7 +159,7 @@ function FilterOptions({ values, facet, selected, count, onChange }) {
 }
 
 function AboutHighlights() {
-  return <section id="about" className="about-highlights"><div className="about-box"><img src="/images/about-pets.jpg" alt="A pet parent with a dog and cat" loading="lazy" /><div><span className="eyebrow">Made for pet parents</span><h2>Better choices for every bowl, walk, and nap.</h2><p>Star Pets is built around simple, practical pet care: quality food, useful treats, and essentials selected with dogs and cats in mind.</p><ul><li>Carefully selected pet food and treats</li><li>Products for dogs, puppies, cats, and kittens</li><li>Secure online payment at checkout</li><li>Friendly support for pet parents</li></ul></div></div></section>;
+  return <section id="about" className="about-highlights"><div className="about-box"><img src="/images/about-pets.png" alt="A pet parent with a dog and cat" loading="lazy" /><div><span className="eyebrow">Made for pet parents</span><h2>Better choices for every bowl, walk, and nap.</h2><p>Star Pets is built around simple, practical pet care: quality food, useful treats, and essentials selected with dogs and cats in mind.</p><ul><li>Carefully selected pet food and treats</li><li>Products for dogs, puppies, cats, and kittens</li><li>Secure online payment at checkout</li><li>Friendly support for pet parents</li></ul></div></div></section>;
 }
 
 function CartPage() {
@@ -153,12 +170,12 @@ function CartPage() {
     const qty = item.qty + delta;
     return qty > 0 ? [{ ...item, qty }] : [];
   }));
-  return <main className="page-main cart-page"><h1>Your shopping cart</h1>{!cart.length ? <section className="panel empty-cart"><p>Your cart is empty.</p><Link className="btn" to="/shop">Browse products</Link></section> : <div className="cart-columns"><section className="panel">{cart.map((item, index) => <article className="cart-line" key={item.id}><div><h2>{item.name}</h2><span>{money(item.price)} each</span></div><div className="quantity-control"><button className="alt" aria-label="Decrease quantity" onClick={() => changeQty(index, -1)}>−</button><b>{item.qty}</b><button className="alt" aria-label="Increase quantity" onClick={() => changeQty(index, 1)}>+</button></div><strong>{money(item.price * item.qty)}</strong><button className="remove-link" onClick={() => setCart(previous => previous.filter((_, itemIndex) => itemIndex !== index))}>Remove</button></article>)}</section><aside className="panel order-summary"><h2>Order summary</h2><p className="row"><span>Subtotal</span><b>{money(total)}</b></p><p className="demo">Shipping and availability are confirmed at checkout.</p><Link className="btn" to="/checkout">Continue to checkout</Link></aside></div>}</main>;
+  return <main className="page-main cart-page"><h1>Your shopping cart</h1>{!cart.length ? <section className="panel empty-cart"><p>Your cart is empty.</p><Link className="btn" to="/shop">Browse products</Link></section> : <div className="cart-columns"><section className="panel">{cart.map((item, index) => <article className="cart-line" key={item.id}><div><h2>{item.name}</h2><span>{money(item.price)} each {item.discountPercent > 0 && <s>{money(item.originalPrice)}</s>}</span></div><div className="quantity-control"><button className="alt" aria-label="Decrease quantity" onClick={() => changeQty(index, -1)}>−</button><b>{item.qty}</b><button className="alt" aria-label="Increase quantity" onClick={() => changeQty(index, 1)}>+</button></div><strong>{money(item.price * item.qty)}</strong><button className="remove-link" onClick={() => setCart(previous => previous.filter((_, itemIndex) => itemIndex !== index))}>Remove</button></article>)}</section><aside className="panel order-summary"><h2>Order summary</h2><p className="row"><span>Subtotal</span><b>{money(total)}</b></p><p className="demo">Shipping and availability are confirmed at checkout.</p><Link className="btn" to="/checkout">Continue to checkout</Link></aside></div>}</main>;
 }
 
 function CheckoutPage() {
   const { cart, setCart } = useStore();
-  const [paymentMethod, setPaymentMethod] = useState('upi'), [error, setError] = useState(''), [busy, setBusy] = useState(false), [placed, setPlaced] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('razorpay'), [error, setError] = useState(''), [busy, setBusy] = useState(false), [placed, setPlaced] = useState(null);
   const [voiceConsent, setVoiceConsent] = useState(false), [marketingConsent, setMarketingConsent] = useState(false);
   const total = cart.reduce((sum, item) => sum + Number(item.price) * item.qty, 0);
   const submit = async event => {
@@ -167,13 +184,39 @@ function CheckoutPage() {
     const form = new FormData(event.currentTarget), value = name => String(form.get(name) || '').trim();
     const phone = value('phone');
     if (!/^\d{10}$/.test(phone)) return setError('Enter a 10-digit phone number.');
-    if (paymentMethod === 'upi' && !/^[\w.\-]{2,}@[a-z]{2,}$/i.test(value('upi'))) return setError('Enter a valid UPI ID, like name@bank.');
-    if (paymentMethod === 'card' && !(/^\d{12,19}$/.test(value('cardNumber').replace(/\s/g, '')) && /^(0[1-9]|1[0-2])\/\d{2}$/.test(value('expiry')) && /^\d{3,4}$/.test(value('cvv')))) return setError('Check the card number, expiry (MM/YY), and CVV.');
     setBusy(true);
     try {
       const order = await api('/api/orders', { items: cart.map(item => ({ id: item.id, qty: item.qty })), customer: { name: value('fullname'), phone, address: value('address') }, automatedCallConsent: voiceConsent, marketingCallConsent: marketingConsent, paymentMethod });
-      const payment = await api(`/api/orders/${order.orderId}/pay`, {});
-      setCart([]); setPlaced({ ...order, paymentStatus: payment.paymentStatus, customerName: value('fullname'), paymentMethod });
+      if (paymentMethod === 'cod') {
+        setCart([]); setPlaced({ ...order, paymentStatus: 'pending', customerName: value('fullname'), paymentMethod });
+        return;
+      }
+      if (!order.razorpay?.keyId || !order.razorpay?.orderId) throw new Error('The online payment session could not be created. Please try again or choose cash on delivery.');
+      await loadRazorpayCheckout();
+      await new Promise((resolve, reject) => {
+        const checkout = new window.Razorpay({
+          key: order.razorpay.keyId,
+          amount: order.razorpay.amount,
+          currency: order.razorpay.currency,
+          name: 'Star Pets',
+          description: `Order #${String(order.orderId).slice(-6).toUpperCase()}`,
+          image: `${window.location.origin}/images/star-pets-logo.png`,
+          order_id: order.razorpay.orderId,
+          prefill: { name: value('fullname'), contact: `+91${phone}` },
+          theme: { color: '#2c8c86' },
+          modal: { ondismiss: () => reject(new Error('Payment was cancelled. Your cart is still saved; you can try again.')) },
+          handler: async response => {
+            try {
+              const payment = await api(`/api/orders/${order.orderId}/verify-payment`, { ...response, orderToken: order.cancelToken });
+              setCart([]);
+              setPlaced({ ...order, paymentStatus: payment.paymentStatus, customerName: value('fullname'), paymentMethod });
+              resolve();
+            } catch (verifyError) { reject(verifyError); }
+          }
+        });
+        checkout.on('payment.failed', response => reject(new Error(response.error?.description || 'Payment failed. Your cart is still saved; please try again.')));
+        checkout.open();
+      });
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
   };
@@ -187,13 +230,10 @@ function CheckoutPage() {
     <label className="consent-option"><input type="checkbox" checked={marketingConsent} onChange={event => setMarketingConsent(event.target.checked)} /> I also agree to occasional automated calls about Star Pets offers. Optional and separate from order updates.</label>
     <label>Delivery address<textarea name="address" rows="3" required autoComplete="street-address" maxLength="500" /></label>
     <h2>Payment</h2>
-    <label className="consent-option"><input type="radio" name="pay" value="upi" checked={paymentMethod === 'upi'} onChange={() => setPaymentMethod('upi')} /> UPI</label>
-    {paymentMethod === 'upi' && <label>UPI ID<input name="upi" placeholder="name@bank" autoComplete="off" required /></label>}
-    <label className="consent-option"><input type="radio" name="pay" value="card" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} /> Debit or credit card</label>
-    {paymentMethod === 'card' && <><label>Card number<input name="cardNumber" inputMode="numeric" autoComplete="cc-number" required /></label><div className="form-split"><label>Expiry (MM/YY)<input name="expiry" placeholder="08/29" autoComplete="cc-exp" required /></label><label>CVV<input name="cvv" inputMode="numeric" maxLength="4" autoComplete="cc-csc" required /></label></div></>}
+    <label className="consent-option"><input type="radio" name="pay" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} /> Pay online with UPI, cards, or net banking</label>
     <label className="consent-option"><input type="radio" name="pay" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} /> Cash on delivery</label>
-    <p className="err" role="alert">{error}</p><button disabled={busy}>{busy ? 'Placing order…' : paymentMethod === 'cod' ? 'Place order' : `Pay ${money(total)}`}</button>
-    <p className="demo">Demo payment: no money is charged. Card details stay in your browser.</p>
+    <p className="err" role="alert">{error}</p><button disabled={busy}>{busy ? 'Please wait…' : paymentMethod === 'cod' ? 'Place order' : `Pay ${money(total)}`}</button>
+    <p className="demo">Online payments open in Razorpay’s secure checkout. Star Pets never receives your card details.</p>
   </form><aside className="panel order-summary"><h2>Order total</h2>{cart.map(item => <p className="row" key={item.id}><span>{item.name} × {item.qty}</span><b>{money(item.price * item.qty)}</b></p>)}<hr /><p className="row"><b>Total</b><b>{money(total)}</b></p><Link to="/cart">Edit cart</Link></aside></main>;
 }
 
@@ -246,7 +286,7 @@ function GroomingPage() {
     finally { setBusy(false); }
   };
   return <main className="page-main grooming-page"><section className="grooming-hero"><span className="shop-eyebrow">A little extra care</span><h1>Fresh, clean, and comfy.</h1><p>Request a grooming appointment for your pet. Choose a bath, haircut, nail trim, or a combination, and our team will contact you to confirm the appointment and price.</p></section>
-    <section className="service-cards" aria-label="Grooming services">{[['grooming-bath.jpg','Bath & brush','A refreshing bath and a good brush to help your pet feel their best.'],['grooming-haircut.jpg','Haircut','Tell us about the trim you have in mind and we’ll discuss what suits your pet.'],['grooming-nails.jpg','Nail trimming','A careful nail trim as a standalone service or alongside a bath.']].map(([image,title,copy]) => <article className="service-card" key={title}><img src={`/images/${image}`} alt={title} loading="lazy" /><div className="service-copy"><h2>{title}</h2><p>{copy}</p></div></article>)}</section>
+    <section className="service-cards" aria-label="Grooming services">{[['grooming-bath.png','Bath & brush','A refreshing bath and a good brush to help your pet feel their best.'],['grooming-haircut.png','Haircut','Tell us about the trim you have in mind and we’ll discuss what suits your pet.'],['grooming-nails.png','Nail trimming','A careful nail trim as a standalone service or alongside a bath.']].map(([image,title,copy]) => <article className="service-card" key={title}><img src={`/images/${image}`} alt={title} loading="lazy" /><div className="service-copy"><h2>{title}</h2><p>{copy}</p></div></article>)}</section>
     <section className="panel booking"><h2>Request an appointment</h2><p className="hint">This is an appointment request, not a confirmed booking. We’ll call or message to confirm availability and pricing.</p>
       {submitted ? <div className="grooming-success" role="status"><h2>Request received!</h2><p>Thanks. Star Pets will contact you to confirm the groomer, appointment time, and price.</p><Link className="btn" to="/shop">Back to shop</Link></div> : <form onSubmit={submit}>
         <label>Your name<input name="customerName" autoComplete="name" required maxLength="100" /></label><label>Phone number<input name="phone" type="tel" autoComplete="tel" required maxLength="30" placeholder="For appointment confirmation" /></label><label>Email address<input name="email" type="email" autoComplete="email" required maxLength="160" /></label><label className="wide">Your location / address<textarea name="location" autoComplete="street-address" rows="2" required maxLength="500" placeholder="Street, area, city, and postal code" /></label><label>Pet’s name<input name="petName" required maxLength="80" /></label><label>Pet type<select name="petType" required defaultValue=""><option value="">Choose one</option><option>Dog</option><option>Cat</option><option>Other</option></select></label><label>Breed (optional)<input name="breed" maxLength="80" /></label>
@@ -257,7 +297,7 @@ function GroomingPage() {
 }
 
 function AboutPage() {
-  return <main className="page-main about-page"><section className="about-story"><span className="shop-eyebrow">A little about us</span><h1>Good care for the pets who make a house a home.</h1><p>Star Pets started with a simple idea: food and accessories good enough that your dog or cat notices the difference. We pick every recipe and product ourselves, and keep the range practical for local pet parents.</p><p>Based in Ulwe, Maharashtra, we handle orders and customer care with a small, friendly team. Questions about an order or a product? Contact us and a real person will get back to you.</p><Link className="btn" to="/shop">Explore products</Link></section><img src="/images/about-pets.jpg" alt="A pet parent spending time with a dog and cat" /></main>;
+  return <main className="page-main about-page"><section className="about-story"><span className="shop-eyebrow">A little about us</span><h1>Good care for the pets who make a house a home.</h1><p>Star Pets started with a simple idea: food and accessories good enough that your dog or cat notices the difference. We pick every recipe and product ourselves, and keep the range practical for local pet parents.</p><p>Based in Ulwe, Maharashtra, we handle orders and customer care with a small, friendly team. Questions about an order or a product? Contact us and a real person will get back to you.</p><Link className="btn" to="/shop">Explore products</Link></section><img src="/images/about-pets.png" alt="A pet parent spending time with a dog and cat" /></main>;
 }
 
 function LoginPage() {
@@ -323,7 +363,7 @@ export default function App() {
   const addToCart = product => setCart(previous => {
     const id = String(product._id || product.id);
     const existing = previous.find(item => item.id === id);
-    return existing ? previous.map(item => item.id === id ? { ...item, qty: item.qty + 1 } : item) : [...previous, { id, name: product.name, price: Number(product.price), qty: 1, image: product.image }];
+    return existing ? previous.map(item => item.id === id ? { ...item, name: product.name, price: productPrice(product), originalPrice: Number(product.price), discountPercent: Number(product.discountPercent || 0), qty: item.qty + 1 } : item) : [...previous, { id, name: product.name, price: productPrice(product), originalPrice: Number(product.price), discountPercent: Number(product.discountPercent || 0), qty: 1, image: product.image }];
   });
   const store = useMemo(() => ({ cart, setCart, addToCart, toast: message => setToast(message) }), [cart]);
   return <StoreContext.Provider value={store}><HashRouter><RoutedContent /></HashRouter></StoreContext.Provider>;

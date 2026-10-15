@@ -799,10 +799,15 @@ const pick = (body) => ({
     name: body.name,
     category: body.category,
     price: Number(body.price),
+    discountPercent: Number(body.discountPercent ?? 0),
     stock: Number(body.stock),
     description: body.description,
     image: body.image
 });
+
+const productSalePrice = (product) => Math.round(
+    Number(product.price) * (100 - Number(product.discountPercent || 0)) / 100
+);
 
 // ==================================================
 // STOREFRONT
@@ -838,8 +843,11 @@ app.post(
             return bad('Enter your name, a 10-digit phone number and your address');
         }
 
-        if (!['cod', 'upi', 'card'].includes(paymentMethod)) {
+        if (!['cod', 'razorpay'].includes(paymentMethod)) {
             return bad('Choose a payment method');
+        }
+        if (paymentMethod === 'razorpay' && (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET)) {
+            return res.status(503).json({ error: 'Online payment is not configured yet. Choose cash on delivery or contact Star Pets.' });
         }
 
         const done = [];
@@ -878,7 +886,9 @@ app.post(
             done.push({
                 product: product._id,
                 name: product.name,
-                price: product.price,
+                regularPrice: product.price,
+                discountPercent: Number(product.discountPercent || 0),
+                price: productSalePrice(product),
                 qty
             });
         }
@@ -901,8 +911,42 @@ app.post(
             cancelTokenHash
         });
 
+        let razorpay = null;
+        if (paymentMethod === 'razorpay') {
+            try {
+                const gatewayResponse = await fetch('https://api.razorpay.com/v1/orders', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Basic ${Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: Math.round(total * 100),
+                        currency: 'INR',
+                        receipt: String(order._id),
+                        notes: { starPetsOrderId: String(order._id) }
+                    })
+                });
+                const gatewayOrder = await gatewayResponse.json().catch(() => ({}));
+                if (!gatewayResponse.ok || !gatewayOrder.id) throw new Error('Gateway order creation failed');
+                order.razorpayOrderId = gatewayOrder.id;
+                await order.save();
+                razorpay = {
+                    keyId: process.env.RAZORPAY_KEY_ID,
+                    orderId: gatewayOrder.id,
+                    amount: gatewayOrder.amount,
+                    currency: gatewayOrder.currency
+                };
+            } catch (error) {
+                await Order.deleteOne({ _id: order._id });
+                await rollback();
+                console.error('Razorpay order creation failed:', error.message);
+                return res.status(502).json({ error: 'Online payment could not start. Please try again or choose cash on delivery.' });
+            }
+        }
+
         // Return this secret once; only its hash is stored in MongoDB.
-        res.status(201).json({ orderId: order._id, cancelToken, total });
+        res.status(201).json({ orderId: order._id, cancelToken, total, razorpay });
     })
 );
 
@@ -926,6 +970,47 @@ async function getCustomerOrder(req, res) {
     }
     return order;
 }
+
+app.post('/api/orders/:id/verify-payment', wrap(async (req, res) => {
+    const order = await getCustomerOrder(req, res);
+    if (!order) return;
+    const paymentId = String(req.body.razorpay_payment_id || '');
+    const gatewayOrderId = String(req.body.razorpay_order_id || '');
+    const signature = String(req.body.razorpay_signature || '');
+    if (order.paymentMethod !== 'razorpay' || !order.razorpayOrderId) {
+        return res.status(400).json({ error: 'This order is not awaiting an online payment.' });
+    }
+    if (order.paymentStatus === 'paid' && order.razorpayPaymentId === paymentId) {
+        return res.json({ orderId: order._id, paymentStatus: 'paid' });
+    }
+    if (gatewayOrderId !== order.razorpayOrderId || !/^pay_[A-Za-z0-9]+$/.test(paymentId) || !/^[a-f0-9]{64}$/i.test(signature)) {
+        return res.status(400).json({ error: 'Payment details did not match this order.' });
+    }
+    const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(`${order.razorpayOrderId}|${paymentId}`).digest();
+    const supplied = Buffer.from(signature, 'hex');
+    if (expected.length !== supplied.length || !crypto.timingSafeEqual(expected, supplied)) {
+        return res.status(400).json({ error: 'Payment verification failed. Please contact Star Pets before retrying.' });
+    }
+
+    const paymentResponse = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+        headers: { Authorization: `Basic ${Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64')}` }
+    });
+    const payment = await paymentResponse.json().catch(() => ({}));
+    if (!paymentResponse.ok) {
+        return res.status(502).json({ error: 'Payment could not be confirmed yet. Please contact Star Pets before paying again.' });
+    }
+    if (payment.order_id !== order.razorpayOrderId || payment.amount !== Math.round(order.total * 100) || payment.currency !== 'INR') {
+        return res.status(400).json({ error: 'Payment amount or order did not match. Please contact Star Pets.' });
+    }
+    if (payment.status !== 'captured') {
+        return res.status(409).json({ error: 'Payment is not confirmed as captured yet. Please contact Star Pets before retrying.' });
+    }
+    order.paymentStatus = 'paid';
+    order.razorpayPaymentId = paymentId;
+    await order.save();
+    res.json({ orderId: order._id, paymentStatus: 'paid' });
+}));
 
 app.post('/api/orders/:id/feedback', wrap(async (req, res) => {
     const order = await getCustomerOrder(req, res);
@@ -1018,24 +1103,6 @@ app.post('/api/orders/:id/cancel', wrap(async (req, res) => {
 // ==================================================
 // DEMO PAYMENT
 // ==================================================
-
-app.post(
-    '/api/orders/:id/pay',
-    wrap(async (req, res) => {
-        const order = await Order.findById(req.params.id);
-
-        if (!order) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-
-        if (order.paymentMethod !== 'cod') {
-            order.paymentStatus = 'paid';
-            await order.save();
-        }
-
-        res.json({ orderId: order._id, paymentStatus: order.paymentStatus });
-    })
-);
 
 // ==================================================
 // CUSTOMER ACCOUNTS

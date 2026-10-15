@@ -12,17 +12,14 @@ if (!fs.existsSync(builtIndex)) {
 
 const builtAssets = path.join(buildDir, 'assets');
 const publicAssets = path.join(publicDir, 'assets');
+// Keep old hashed bundles available during Vercel's output tracing. The new
+// index points to the current hashes; stale files are harmless and can be
+// removed by a separate cleanup once deployment tracing has completed.
 fs.mkdirSync(publicAssets, { recursive: true });
 fs.cpSync(builtAssets, publicAssets, { recursive: true });
 
 const html = fs.readFileSync(builtIndex);
 fs.writeFileSync(path.join(publicDir, 'index.html'), html);
-
-// Copy the PWA manifest, service worker, and icon into Express's public root.
-for (const asset of ['manifest.webmanifest', 'service-worker.js', 'star-pets-icon.svg', 'star-pets-app-icon.jpg', 'star-pets-app-icon-192.png', 'star-pets-app-icon-512.png']) {
-  const source = path.join(buildDir, asset);
-  if (fs.existsSync(source)) fs.copyFileSync(source, path.join(publicDir, asset));
-}
 
 // Keep the existing public .html links working while they now load the React app.
 for (const page of ['cat', 'dog', 'cart', 'checkout', 'about', 'grooming', 'login']) {

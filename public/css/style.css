@@ -5,7 +5,7 @@ h1,h2,h3,.brand{font-family:Fredoka,system-ui,sans-serif;font-weight:600;line-he
 h2{margin-bottom:.9rem}
 header{display:flex;justify-content:space-between;align-items:center;padding:.7rem clamp(1rem,4vw,3rem);border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:5}
 .brand{display:flex;align-items:center;gap:.6rem;font-size:1.5rem;color:var(--navy);text-decoration:none}
-.brand-logo{display:block;width:190px;height:auto;max-height:64px;object-fit:contain}
+.brand-logo{display:block;width:190px;height:64px;object-fit:cover;object-position:center;background:#fff;border-radius:6px}
 .brand i{color:var(--teal);font-style:normal}
 .mark{width:44px;height:44px;border-radius:50%;background:#FBF5E9 url(../images/image1.jpg) 50% 37%/137px auto no-repeat;border:2px solid var(--mist)}
 nav a{color:var(--ink);text-decoration:none;margin-left:1.25rem;font-weight:500}
@@ -61,35 +61,6 @@ footer a{color:inherit}
 @media(max-width:480px){.shop-layout #grid.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* Keep the legacy storefront header inside narrow Android WebView screens. */
-@media(max-width:760px){
-  html,body{width:100%;max-width:100%;overflow-x:hidden}
-  header#top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px;padding:10px 14px;min-width:0;width:100%}
-  header#top>.brand{grid-column:1;grid-row:1;min-width:0}
-  header#top .brand-logo{width:min(180px,42vw);max-width:100%;height:auto}
-  header#top nav{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;width:100%;min-width:0;justify-content:stretch;padding:4px 0 0}
-  header#top nav a{display:flex;align-items:center;justify-content:center;gap:2px;margin:0;min-width:0;padding:8px 1px;text-align:center;white-space:normal;font-size:clamp(.66rem,2.65vw,.88rem);line-height:1.15}
-  header#top .sp-auth{grid-column:2;grid-row:1;justify-content:flex-end;gap:5px;min-width:0;margin-left:0}
-  header#top .sp-auth a,header#top .sp-auth button{padding:7px 9px;font-size:.78rem;white-space:nowrap}
-  .hero,.two{grid-template-columns:minmax(0,1fr);min-width:0}
-  main,.shop-catalog{width:100%;max-width:100%;min-width:0;margin-left:auto;margin-right:auto;padding-left:14px;padding-right:14px}
-  .hero>*,.two>*{min-width:0;max-width:100%}
-  .hero img{width:100%;height:auto;max-height:280px;object-fit:cover}
-}
-@media(max-width:380px){
-  header#top{gap:8px;padding:9px 10px}
-  header#top .brand-logo{width:min(145px,38vw)}
-  header#top nav{grid-template-columns:repeat(3,minmax(0,1fr))}
-  header#top nav a{font-size:.78rem;padding:7px 2px}
-}
-
-/* Product card content must follow the photo, never overlap it. */
-.shop-catalog #grid .card{display:flex;flex-direction:column;min-width:0;overflow:hidden}
-.shop-catalog #grid .pic{position:relative;display:grid;flex:0 0 clamp(160px,20vw,285px);width:100%;height:clamp(160px,20vw,285px);min-height:160px;margin:0;overflow:hidden}
-.shop-catalog #grid .pic img{position:static!important;display:block;width:100%;height:100%;min-height:0;object-fit:contain}
-.shop-catalog #grid .body{position:relative;z-index:1;display:flex;flex:1;flex-direction:column;min-width:0;margin:0;background:#fff}
-.shop-catalog #grid .body h3,.shop-catalog #grid .body p{position:static;margin:0}
-
 /* Catalog layout inspired by the supplied marketplace reference, using Star Pets styling. */
 .shop-catalog{width:min(100%,1880px);max-width:none;padding-inline:clamp(16px,3.2vw,54px)}
 .shop-banner{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:245px;margin:24px 0 20px;padding:30px 5%;overflow:hidden;border-radius:20px;background:linear-gradient(105deg,#1c3557 0%,#245c76 54%,#3ba6a6 100%);color:white}
@@ -140,6 +111,11 @@ footer a{color:inherit}
 .shop-catalog .card .row b{font-size:.95rem}
 .shop-catalog .card .row button{padding:7px 10px;background:#f4c84a;border:1px solid #f4c84a;color:#193453;border-radius:7px;font-size:.8rem;white-space:nowrap}
 .shop-catalog .card .row button:hover{background:#ffdb6a}
+.shop-catalog .pic{position:relative}
+.discount-badge{position:absolute;z-index:1;top:10px;left:10px;padding:5px 9px;border-radius:999px;background:#d9473f;color:#fff;font-size:.78rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.16)}
+.product-prices{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.product-prices s{color:#7b8794;font-size:.8rem;font-weight:400}
+.footer-brand img{display:block;width:min(280px,100%);height:92px;object-fit:cover;object-position:center;background:#fff;border-radius:8px}
 @media(max-width:1250px){.shop-layout #grid.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){.shop-layout #grid.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.shop-layout #filters{width:210px;flex-basis:210px}}
 @media(max-width:760px){.shop-banner{min-height:0;padding:26px;gap:16px}.shop-banner-copy{max-width:60%}.shop-banner>img{width:40%;height:150px}.shop-layout{flex-direction:column}.shop-layout #filters{width:100%;flex:auto;position:static;max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.shop-layout #filters details{margin:0}.shop-layout #filters .filter-reset{grid-column:1/-1}.category-rail{justify-content:flex-start;overflow-x:auto}.category-rail a{flex:none}}

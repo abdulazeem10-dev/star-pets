@@ -56,11 +56,6 @@ public final class MainActivity extends Activity {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        // Honor the website's <meta name="viewport"> so its responsive layout
-        // uses the device width instead of a desktop-sized virtual viewport.
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(false);
-        settings.setTextZoom(100);
         settings.setAllowFileAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setSupportMultipleWindows(true);

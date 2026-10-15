@@ -64,7 +64,7 @@ dialog::backdrop{background:rgba(36,31,77,.5)}
 
 <section id="login">
   <form id="loginForm">
-    <h1 class="brand">Star Pets</h1>
+    <h1 class="brand" style="display:flex;align-items:center;gap:.6rem"><img src="/images/star-pets-logo.png" alt="" style="width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px">Star Pets</h1>
     <p style="margin:0;color:var(--mute)">Sign in to manage your store</p>
     <label for="email">Email</label><input id="email" type="email" required autocomplete="username">
     <label for="password">Password</label><input id="password" type="password" required autocomplete="current-password">
@@ -75,7 +75,7 @@ dialog::backdrop{background:rgba(36,31,77,.5)}
 
 <div id="app" class="hidden">
   <aside>
-    <div class="brand">Star Pets</div>
+    <div class="brand"><img src="/images/star-pets-logo.png" alt="" style="width:34px;height:34px;object-fit:contain;background:#fff;border-radius:8px">Star Pets</div>
     <button class="nav on" data-tab="dashboard">Dashboard</button>
     <button class="nav" data-tab="products">Products</button>
     <button class="nav" data-tab="orders">Orders</button>
@@ -91,7 +91,7 @@ dialog::backdrop{background:rgba(36,31,77,.5)}
     </div>
     <div id="products" class="hidden">
       <div class="bar"><h2 style="margin:0">Products</h2><button class="btn" id="addProduct">Add product</button></div>
-      <div class="panel"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div>
+      <div class="panel"><table><thead><tr><th>Product</th><th>Category</th><th>Regular price</th><th>Discount</th><th>Stock</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div>
     </div>
     <div id="orders" class="hidden">
       <h2>Orders</h2>
@@ -105,9 +105,10 @@ dialog::backdrop{background:rgba(36,31,77,.5)}
     <h2 id="dialogTitle" style="margin:0">Add product</h2>
     <label for="pName">Name</label><input id="pName" required>
     <div class="row">
-      <div><label for="pCat">Category</label><select id="pCat"><option>Food</option><option>Accessories</option></select></div>
+      <div><label for="pCat">Category</label><select id="pCat"><option>Dog</option><option>Cat</option><option>Accessories</option></select></div>
       <div><label for="pPrice">Price (₹)</label><input id="pPrice" type="number" min="0" step="0.01" required></div>
     </div>
+    <label for="pDiscount">Discount (%)</label><input id="pDiscount" type="number" min="0" max="100" step="1" value="0" required>
     <div>
       <div><label for="pStock">Stock</label><input id="pStock" type="number" min="0" value="0" required></div>
     </div>
@@ -185,10 +186,11 @@ async function loadProducts() {
   $('productRows').innerHTML = products.length ? products.map(p => `
     <tr><td>${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}${esc(p.name)}</td>
     <td>${esc(p.category)}</td><td>${money(p.price)}</td>
+    <td>${Number(p.discountPercent || 0) ? `${Number(p.discountPercent)}% off<br><small>${money(Math.round(Number(p.price) * (100 - Number(p.discountPercent)) / 100))}</small>` : '—'}</td>
     <td class="${p.stock <= 5 ? 'low' : ''}">${p.stock}</td>
     <td style="white-space:nowrap"><button class="btn ghost sm" data-edit="${p._id}">Edit</button>
     <button class="btn danger sm" data-del="${p._id}">Delete</button></td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty">No products yet. Add your first one.</td></tr>';
+    : '<tr><td colspan="6" class="empty">No products yet. Add your first one.</td></tr>';
 }
 $('productRows').onclick = async e => {
   const { edit, del } = e.target.dataset;
@@ -200,8 +202,9 @@ $('productRows').onclick = async e => {
 function openProduct(p) {
   editingId = p?._id || null;
   $('dialogTitle').textContent = p ? 'Edit product' : 'Add product';
-  $('pName').value = p?.name || ''; $('pCat').value = p?.category || 'Food';
+  $('pName').value = p?.name || ''; $('pCat').value = p?.category || 'Dog';
   $('pPrice').value = p?.price ?? ''; $('pStock').value = p?.stock ?? 0;
+  $('pDiscount').value = p?.discountPercent ?? 0;
   $('pImage').value = p?.image || '';
   $('pDesc').value = p?.description || ''; $('productErr').textContent = '';
   $('productDialog').showModal();
@@ -211,7 +214,7 @@ $('cancelProduct').onclick = () => $('productDialog').close();
 $('productForm').onsubmit = async e => {
   e.preventDefault();
   const body = { name: $('pName').value, category: $('pCat').value, price: +$('pPrice').value,
-    stock: +$('pStock').value, image: $('pImage').value, description: $('pDesc').value };
+    discountPercent: +$('pDiscount').value, stock: +$('pStock').value, image: $('pImage').value, description: $('pDesc').value };
   try {
     await (editingId ? api('/products/' + editingId, 'PUT', body) : api('/products', 'POST', body));
     $('productDialog').close(); toast('Product saved'); loadProducts();
