@@ -12,14 +12,14 @@ if (!fs.existsSync(builtIndex)) {
 
 const builtAssets = path.join(buildDir, 'assets');
 const publicAssets = path.join(publicDir, 'assets');
-fs.rmSync(publicAssets, { recursive: true, force: true });
+fs.mkdirSync(publicAssets, { recursive: true });
 fs.cpSync(builtAssets, publicAssets, { recursive: true });
 
 const html = fs.readFileSync(builtIndex);
 fs.writeFileSync(path.join(publicDir, 'index.html'), html);
 
 // Copy the PWA manifest, service worker, and icon into Express's public root.
-for (const asset of ['manifest.webmanifest', 'service-worker.js', 'star-pets-icon.svg']) {
+for (const asset of ['manifest.webmanifest', 'service-worker.js', 'star-pets-icon.svg', 'star-pets-app-icon.jpg', 'star-pets-app-icon-192.png', 'star-pets-app-icon-512.png']) {
   const source = path.join(buildDir, asset);
   if (fs.existsSync(source)) fs.copyFileSync(source, path.join(publicDir, asset));
 }

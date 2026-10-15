@@ -3,3 +3,5 @@ node_modules/
 .env.local
 .vercel/
 create-admin.js
+.vercel
+.env*
